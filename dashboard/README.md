@@ -3,7 +3,28 @@
 Interactive Streamlit dashboard over the four monthly Toronto Airbnb snapshots
 (June → September 2026) in `../data/`.
 
-## Run
+## Deploy on Streamlit Community Cloud (free)
+
+The app is fully self-contained: `data/market_summary.db` (built by
+`../scripts/build_dashboard_bundle.py`, ~27 MB) holds everything the
+dashboard needs — no full databases, no secrets, no environment variables.
+
+1. Go to [share.streamlit.io](https://share.streamlit.io) and sign in with
+   GitHub.
+2. Click **New app** → **Deploy from GitHub**.
+3. Repository: `louisctlau/airbnb-toronto-sql-analysis`, branch `main`,
+   main file path: `dashboard/app.py`.
+4. Click **Deploy**. Streamlit installs `dashboard/requirements.txt` and
+   launches the app — you'll get a public `*.streamlit.app` URL.
+
+To refresh the bundle after a new monthly snapshot lands:
+```bash
+python3 scripts/build_dashboard_bundle.py   # rebuilds dashboard/data/market_summary.db
+```
+then commit and push the regenerated bundle. (The monthly
+`scripts/refresh_month.py` automation can do this as part of its run.)
+
+## Run locally
 
 ```bash
 cd dashboard
@@ -15,6 +36,10 @@ streamlit run app.py
 ```
 
 The app opens at http://localhost:8501.
+
+Local dev note: if `data/market_summary.db` exists next to the app it is used
+(bundle mode). Delete/rename it to run against the full per-month databases
+in `../data/` instead.
 
 ## Tabs
 

@@ -1,7 +1,12 @@
 """Toronto Airbnb — SQL portfolio dashboard.
 
-Run from this directory:  streamlit run app.py
+Run locally from this directory:  streamlit run app.py
 Requires the project SQLite databases in ../data/.
+
+Deploying? The app is self-contained when dashboard/data/market_summary.db
+exists (built by scripts/build_dashboard_bundle.py): in that "bundle mode"
+every tab works identically off the small committed bundle, no full
+databases or secrets needed. See dashboard/README.md.
 """
 import sqlite3
 from pathlib import Path
@@ -15,13 +20,33 @@ import streamlit as st
 # Config
 # ----------------------------------------------------------------------------
 BASE = Path(__file__).resolve().parent
-DATA_DIR = BASE.parent / "data"
-MONTHS = {
-    "June 2026": DATA_DIR / "airbnb_toronto.db",
-    "July 2026": DATA_DIR / "airbnb_toronto_2026_07.db",
-    "August 2026": DATA_DIR / "airbnb_toronto_2026_08.db",
-    "September 2026": DATA_DIR / "airbnb_toronto_2026_09.db",
-}
+BUNDLE_DB = BASE / "data" / "market_summary.db"
+BUNDLE = BUNDLE_DB.exists()
+
+if BUNDLE:
+    # Bundle mode: one self-contained db for every month.
+    MONTHS = {
+        "June 2026": str(BUNDLE_DB),
+        "July 2026": str(BUNDLE_DB),
+        "August 2026": str(BUNDLE_DB),
+        "September 2026": str(BUNDLE_DB),
+    }
+    MONTH_CODES = {
+        "June 2026": "2026-06",
+        "July 2026": "2026-07",
+        "August 2026": "2026-08",
+        "September 2026": "2026-09",
+    }
+else:
+    # Local dev: the full per-month databases.
+    DATA_DIR = BASE.parent / "data"
+    MONTHS = {
+        "June 2026": str(DATA_DIR / "airbnb_toronto.db"),
+        "July 2026": str(DATA_DIR / "airbnb_toronto_2026_07.db"),
+        "August 2026": str(DATA_DIR / "airbnb_toronto_2026_08.db"),
+        "September 2026": str(DATA_DIR / "airbnb_toronto_2026_09.db"),
+    }
+    MONTH_CODES = {}
 
 st.set_page_config(
     page_title="Toronto Airbnb — SQL Analysis Dashboard",
@@ -29,29 +54,44 @@ st.set_page_config(
     layout="wide",
 )
 
-MEDIAN_SQL = """
+
+def src_for(view: str) -> str:
+    """SQL FROM-source for the listings table of one month's view.
+
+    Bundle mode reads a per-month view (listings_2026_06, …) over the shared
+    listings_slim table; local mode uses that month's own `listings` table.
+    Every query keeps `FROM listings ...` semantics verbatim in both modes.
+    """
+    if BUNDLE:
+        return "listings_" + MONTH_CODES[view].replace("-", "_")
+    return "listings"
+
+
+def median_sql(src: str, rt: str) -> str:
+    return f"""
 SELECT AVG(price) FROM (
   SELECT price,
          ROW_NUMBER() OVER (ORDER BY price) AS rn,
          COUNT(*) OVER () AS cnt
-  FROM listings
+  FROM {src}
   WHERE price > 0 AND room_type = '{rt}'
 ) WHERE rn IN ((cnt + 1) / 2, (cnt + 2) / 2)
 """
 
-KPI_SQL = """
+
+def kpi_sql(src: str) -> str:
+    return f"""
 SELECT
-  (SELECT COUNT(*) FROM listings) AS listings,
-  ({ent}) AS entire_med,
-  ({priv}) AS private_med,
+  (SELECT COUNT(*) FROM {src}) AS listings,
+  ({median_sql(src, 'Entire home/apt')}) AS entire_med,
+  ({median_sql(src, 'Private room')}) AS private_med,
   (SELECT 100.0 * SUM(CASE WHEN price IS NULL OR price <= 0 THEN 1 ELSE 0 END)
-           / COUNT(*) FROM listings) AS no_quote_pct,
+           / COUNT(*) FROM {src}) AS no_quote_pct,
   (SELECT 100.0 * SUM(CASE WHEN host_is_superhost = 1 THEN 1 ELSE 0 END)
-           / COUNT(*) FROM listings WHERE price > 0) AS superhost_share,
+           / COUNT(*) FROM {src} WHERE price > 0) AS superhost_share,
   (SELECT 100.0 * SUM(CASE WHEN number_of_reviews = 0 OR number_of_reviews IS NULL
-                      THEN 1 ELSE 0 END) / COUNT(*) FROM listings) AS never_reviewed_pct
-""".format(ent=MEDIAN_SQL.format(rt="Entire home/apt"),
-           priv=MEDIAN_SQL.format(rt="Private room"))
+                      THEN 1 ELSE 0 END) / COUNT(*) FROM {src}) AS never_reviewed_pct
+"""
 
 
 # ----------------------------------------------------------------------------
@@ -73,8 +113,13 @@ def query(db: str, sql: str, params: tuple = ()) -> pd.DataFrame:
 
 
 @st.cache_data
-def kpis(db: str) -> dict:
-    row = query(db, KPI_SQL).iloc[0]
+def kpis(view: str) -> dict:
+    db = MONTHS[view]
+    if BUNDLE:
+        row = query(db, "SELECT * FROM monthly_kpis WHERE month = ?",
+                    (MONTH_CODES[view],)).iloc[0]
+    else:
+        row = query(db, kpi_sql(src_for(view))).iloc[0]
     return {
         "listings": int(row["listings"]),
         "entire_med": round(float(row["entire_med"]), 2),
@@ -88,8 +133,8 @@ def kpis(db: str) -> dict:
 @st.cache_data
 def all_kpis() -> pd.DataFrame:
     rows = []
-    for label, db in MONTHS.items():
-        k = kpis(str(db))
+    for label in MONTHS:
+        k = kpis(label)
         k["month"] = label
         rows.append(k)
     df = pd.DataFrame(rows)
@@ -98,14 +143,15 @@ def all_kpis() -> pd.DataFrame:
 
 
 @st.cache_data
-def neighbourhoods(db: str) -> pd.DataFrame:
-    return query(db, """
+def neighbourhoods(view: str) -> pd.DataFrame:
+    src = src_for(view)
+    return query(MONTHS[view], f"""
     WITH med AS (
       SELECT nb, AVG(price) AS median_price FROM (
         SELECT neighbourhood_cleansed AS nb, price,
                ROW_NUMBER() OVER (PARTITION BY neighbourhood_cleansed ORDER BY price) AS rn,
                COUNT(*) OVER (PARTITION BY neighbourhood_cleansed) AS cnt
-        FROM listings WHERE price > 0)
+        FROM {src} WHERE price > 0)
       WHERE rn IN ((cnt + 1) / 2, (cnt + 2) / 2)
       GROUP BY nb)
     SELECT l.neighbourhood_cleansed AS nb,
@@ -113,7 +159,7 @@ def neighbourhoods(db: str) -> pd.DataFrame:
            ROUND(AVG(l.price), 2) AS avg_price,
            ROUND(m.median_price, 2) AS median_price,
            ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 1) AS pct_supply
-    FROM listings l JOIN med m ON m.nb = l.neighbourhood_cleansed
+    FROM {src} l JOIN med m ON m.nb = l.neighbourhood_cleansed
     WHERE l.price > 0
     GROUP BY l.neighbourhood_cleansed
     ORDER BY listings DESC
@@ -121,8 +167,9 @@ def neighbourhoods(db: str) -> pd.DataFrame:
 
 
 @st.cache_data
-def superhost_stats(db: str) -> pd.DataFrame:
-    return query(db, """
+def superhost_stats(view: str) -> pd.DataFrame:
+    src = src_for(view)
+    return query(MONTHS[view], f"""
     SELECT CASE WHEN host_is_superhost = 1 THEN 'Superhost'
                 WHEN host_is_superhost = 0 THEN 'Regular host'
                 ELSE 'Unknown' END AS host_type,
@@ -130,16 +177,17 @@ def superhost_stats(db: str) -> pd.DataFrame:
            ROUND(AVG(price), 2) AS avg_price,
            ROUND(AVG(review_scores_rating), 2) AS avg_rating,
            ROUND(AVG(reviews_per_month), 2) AS avg_reviews_pm
-    FROM listings WHERE price > 0 GROUP BY host_is_superhost
+    FROM {src} WHERE price > 0 GROUP BY host_is_superhost
     """)
 
 
 @st.cache_data
-def host_concentration(db: str) -> pd.DataFrame:
-    return query(db, """
+def host_concentration(view: str) -> pd.DataFrame:
+    src = src_for(view)
+    return query(MONTHS[view], f"""
     WITH hs AS (
       SELECT host_id, COUNT(*) AS n
-      FROM listings WHERE host_id IS NOT NULL AND price > 0 GROUP BY host_id)
+      FROM {src} WHERE host_id IS NOT NULL AND price > 0 GROUP BY host_id)
     SELECT CASE WHEN h.n = 1 THEN '1 listing'
                 WHEN h.n <= 5 THEN '2–5 listings'
                 ELSE '6+ listings' END AS band,
@@ -147,49 +195,52 @@ def host_concentration(db: str) -> pd.DataFrame:
            COUNT(*) AS listings,
            ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 1) AS pct_supply,
            ROUND(AVG(l.price), 2) AS avg_price
-    FROM listings l JOIN hs h ON h.host_id = l.host_id
+    FROM {src} l JOIN hs h ON h.host_id = l.host_id
     WHERE l.price > 0
     GROUP BY band ORDER BY MIN(h.n)
     """)
 
 
 @st.cache_data
-def room_medians(db: str) -> pd.DataFrame:
-    return query(db, """
+def room_medians(view: str) -> pd.DataFrame:
+    src = src_for(view)
+    return query(MONTHS[view], f"""
     SELECT room_type, AVG(price) AS median_price FROM (
       SELECT room_type, price,
              ROW_NUMBER() OVER (PARTITION BY room_type ORDER BY price) AS rn,
              COUNT(*) OVER (PARTITION BY room_type) AS cnt
-      FROM listings WHERE price > 0)
+      FROM {src} WHERE price > 0)
     WHERE rn IN ((cnt + 1) / 2, (cnt + 2) / 2)
     GROUP BY room_type ORDER BY median_price DESC
     """)
 
 
 @st.cache_data
-def bedroom_curve(db: str) -> pd.DataFrame:
-    return query(db, """
+def bedroom_curve(view: str) -> pd.DataFrame:
+    src = src_for(view)
+    return query(MONTHS[view], f"""
     SELECT CAST(bedrooms AS INTEGER) AS bedrooms,
            COUNT(*) AS listings,
            ROUND(AVG(price), 2) AS avg_price,
            ROUND(AVG(price) - LAG(AVG(price)) OVER (ORDER BY CAST(bedrooms AS INTEGER)), 2)
              AS marginal
-    FROM listings
+    FROM {src}
     WHERE room_type = 'Entire home/apt' AND price > 0 AND bedrooms BETWEEN 1 AND 5
     GROUP BY bedrooms ORDER BY bedrooms
     """)
 
 
 @st.cache_data
-def rating_bands(db: str) -> pd.DataFrame:
-    return query(db, """
+def rating_bands(view: str) -> pd.DataFrame:
+    src = src_for(view)
+    return query(MONTHS[view], f"""
     SELECT CASE WHEN review_scores_rating IS NULL THEN 'No rating yet'
                 WHEN review_scores_rating < 4.5 THEN 'Below 4.50'
                 WHEN review_scores_rating < 4.8 THEN '4.50 – 4.79'
                 ELSE '4.80 – 5.00' END AS band,
            COUNT(*) AS listings,
            ROUND(AVG(price), 2) AS avg_price
-    FROM listings WHERE price > 0
+    FROM {src} WHERE price > 0
     GROUP BY band
     ORDER BY CASE band WHEN 'No rating yet' THEN 0 WHEN 'Below 4.50' THEN 1
                        WHEN '4.50 – 4.79' THEN 2 ELSE 3 END
@@ -197,12 +248,20 @@ def rating_bands(db: str) -> pd.DataFrame:
 
 
 @st.cache_data
-def true_occupancy_by_nb(db: str) -> pd.DataFrame:
-    return query(db, """
+def true_occupancy_by_nb(view: str) -> pd.DataFrame:
+    db = MONTHS[view]
+    if BUNDLE:
+        return query(db, """
+        SELECT nb, listings,
+               true_occ_pct, est_occ_pct
+        FROM calendar_occupancy_neighbourhood
+        """)
+    src = src_for(view)
+    return query(db, f"""
     WITH occ AS (
       SELECT l.id, l.neighbourhood_cleansed AS nb, l.estimated_occupancy_l365d,
              SUM(1 - c.available) * 100.0 / COUNT(*) AS true_occ
-      FROM calendar c JOIN listings l ON l.id = c.listing_id
+      FROM calendar c JOIN {src} l ON l.id = c.listing_id
       GROUP BY l.id)
     SELECT nb, COUNT(*) AS listings,
            ROUND(AVG(true_occ), 1) AS true_occ_pct,
@@ -213,7 +272,12 @@ def true_occupancy_by_nb(db: str) -> pd.DataFrame:
 
 
 @st.cache_data
-def availability_curve(db: str) -> pd.DataFrame:
+def availability_curve(view: str) -> pd.DataFrame:
+    db = MONTHS[view]
+    if BUNDLE:
+        return query(db, """
+        SELECT cal_month, pct_available FROM calendar_monthly
+        """)
     return query(db, """
     SELECT strftime('%Y-%m', date) AS cal_month,
            ROUND(SUM(available) * 100.0 / COUNT(*), 1) AS pct_available
@@ -222,15 +286,24 @@ def availability_curve(db: str) -> pd.DataFrame:
 
 
 @st.cache_data
-def city_true_occupancy(db: str) -> float:
-    df = query(db, """
-    SELECT SUM(1 - available) * 100.0 / COUNT(*) AS occ FROM calendar
-    """)
+def city_true_occupancy(view: str) -> float:
+    db = MONTHS[view]
+    if BUNDLE:
+        df = query(db, "SELECT city_true_occ_pct AS occ FROM calendar_summary")
+    else:
+        df = query(db, """
+        SELECT SUM(1 - available) * 100.0 / COUNT(*) AS occ FROM calendar
+        """)
     return round(float(df.iloc[0]["occ"]), 1)
 
 
 @st.cache_data
-def review_volume(db: str) -> pd.DataFrame:
+def review_volume(view: str) -> pd.DataFrame:
+    db = MONTHS[view]
+    if BUNDLE:
+        return query(db, """
+        SELECT review_month, reviews FROM review_volume
+        """)
     return query(db, """
     SELECT strftime('%Y-%m', date) AS review_month, COUNT(*) AS reviews
     FROM reviews GROUP BY review_month ORDER BY review_month
@@ -238,23 +311,31 @@ def review_volume(db: str) -> pd.DataFrame:
 
 
 @st.cache_data
-def review_velocity(db: str) -> pd.DataFrame:
-    return query(db, """
+def review_velocity(view: str) -> pd.DataFrame:
+    db = MONTHS[view]
+    if BUNDLE:
+        return query(db, """
+        SELECT name, nb, room_type, price, reviews_pm, reviews
+        FROM velocity_top
+        """)
+    src = src_for(view)
+    return query(db, f"""
     SELECT name, neighbourhood_cleansed AS nb, room_type,
            ROUND(price, 2) AS price,
            ROUND(reviews_per_month, 2) AS reviews_pm,
            number_of_reviews AS reviews
-    FROM listings
+    FROM {src}
     WHERE number_of_reviews >= 20 AND reviews_per_month IS NOT NULL
     ORDER BY reviews_per_month DESC LIMIT 15
     """)
 
 
 @st.cache_data
-def neighbourhood_list(db: str) -> list:
-    df = query(db, """
+def neighbourhood_list(view: str) -> list:
+    src = src_for(view)
+    df = query(MONTHS[view], f"""
     SELECT neighbourhood_cleansed AS nb, COUNT(*) AS n
-    FROM listings WHERE neighbourhood_cleansed IS NOT NULL
+    FROM {src} WHERE neighbourhood_cleansed IS NOT NULL
     GROUP BY nb ORDER BY n DESC LIMIT 60
     """)
     return df["nb"].tolist()
@@ -269,8 +350,6 @@ view = st.sidebar.selectbox(
     ["June 2026", "July 2026", "August 2026", "September 2026", "Trends (all months)"],
     index=3,
 )
-if view != "Trends (all months)":
-    DB = str(MONTHS[view])
 
 st.sidebar.markdown("---")
 st.sidebar.markdown(
@@ -315,7 +394,7 @@ if view == "Trends (all months)":
 # ----------------------------------------------------------------------------
 with tab_over:
     st.header(f"Overview — {view}")
-    k = kpis(DB)
+    k = kpis(view)
     c1, c2, c3 = st.columns(3)
     c1.metric("Listings", f"{k['listings']:,}")
     c2.metric("Entire-home median", f"${k['entire_med']:,.2f}")
@@ -338,7 +417,7 @@ with tab_over:
 
 with tab_nb:
     st.header(f"Neighbourhoods — {view}")
-    nb = neighbourhoods(DB)
+    nb = neighbourhoods(view)
     top15 = nb.head(15)
 
     fig = px.bar(top15.sort_values("listings"), x="listings", y="nb",
@@ -373,7 +452,7 @@ with tab_nb:
 
 with tab_hosts:
     st.header(f"Hosts — {view}")
-    sh = superhost_stats(DB)
+    sh = superhost_stats(view)
     sh = sh[sh["host_type"] != "Unknown"]
     c1, c2, c3 = st.columns(3)
     m1 = sh.set_index("host_type")
@@ -386,7 +465,7 @@ with tab_hosts:
         fig.update_layout(title=title, height=280, margin=dict(l=20, r=20, t=40, b=20))
         [c1, c2, c3][i].plotly_chart(fig, use_container_width=True)
 
-    hc = host_concentration(DB)
+    hc = host_concentration(view)
     col1, col2 = st.columns(2)
     fig = px.pie(hc, values="pct_supply", names="band", hole=0.45,
                  title="Share of priced supply by host portfolio size")
@@ -400,13 +479,13 @@ with tab_hosts:
 
 with tab_price:
     st.header(f"Pricing — {view}")
-    rm = room_medians(DB)
+    rm = room_medians(view)
     fig = px.bar(rm, x="room_type", y="median_price", color="room_type",
                  labels={"room_type": "", "median_price": "Median $/night"},
                  title="Median nightly price by room type")
     st.plotly_chart(fig, use_container_width=True)
 
-    bc = bedroom_curve(DB)
+    bc = bedroom_curve(view)
     fig = go.Figure()
     fig.add_trace(go.Bar(name="Avg price", x=bc["bedrooms"], y=bc["avg_price"],
                          text=bc["avg_price"], textposition="outside"))
@@ -418,7 +497,7 @@ with tab_price:
                       overlaying="y", side="right"), legend=dict(x=0.05, y=0.95))
     st.plotly_chart(fig, use_container_width=True)
 
-    rb = rating_bands(DB)
+    rb = rating_bands(view)
     fig = px.bar(rb, x="band", y="avg_price", color="band",
                  labels={"band": "Rating band", "avg_price": "Avg $/night"},
                  title="Average price by rating band")
@@ -431,13 +510,13 @@ with tab_occ:
                    "Switch the snapshot selector to August 2026 to see true "
                    "(calendar-derived) occupancy analysis.")
     else:
-        true_occ = city_true_occupancy(DB)
+        true_occ = city_true_occupancy(view)
         st.metric("City-wide true occupancy (calendar-derived, next 365 days)",
                   f"{true_occ}%")
         st.caption("Inside Airbnb's `estimated_occupancy_l365d` field puts this at "
                    "~20% — the calendar shows roughly **2.4×** more actual booked "
                    "days. Estimates understate real activity.")
-        occ = true_occupancy_by_nb(DB)
+        occ = true_occupancy_by_nb(view)
         fig = go.Figure()
         fig.add_trace(go.Bar(name="True occupancy %", x=occ["nb"], y=occ["true_occ_pct"]))
         fig.add_trace(go.Bar(name="Inside Airbnb estimate %", x=occ["nb"],
@@ -446,7 +525,7 @@ with tab_occ:
                           title="True vs estimated occupancy — top 10 neighbourhoods",
                           yaxis_title="%")
         st.plotly_chart(fig, use_container_width=True)
-        av = availability_curve(DB)
+        av = availability_curve(view)
         fig = px.line(av, x="cal_month", y="pct_available", markers=True,
                       labels={"cal_month": "", "pct_available": "% available"},
                       title="Share of calendar days still bookable, by month")
@@ -458,7 +537,7 @@ with tab_rev:
         st.warning("💬 Review-level data exists for the **August 2026** snapshot only. "
                    "Switch the snapshot selector to August 2026 to explore review trends.")
     else:
-        rv = review_volume(DB)
+        rv = review_volume(view)
         fig = px.line(rv, x="review_month", y="reviews", markers=True,
                       labels={"review_month": "", "reviews": "Reviews"},
                       title="Review volume by month (Jan 2023 → Aug 2026)")
@@ -482,31 +561,32 @@ with tab_rev:
                    "runs at page load.")
 
         st.subheader("Fastest review velocity")
-        st.dataframe(review_velocity(DB), use_container_width=True)
+        st.dataframe(review_velocity(view), use_container_width=True)
 
 with tab_val:
     st.header(f"Value finder — {view}")
     st.caption("The A11 query, interactive: highly-rated entire homes priced "
                "below their neighbourhood median.")
     col1, col2, col3 = st.columns(3)
-    nb_choice = col1.selectbox("Neighbourhood", neighbourhood_list(DB))
+    nb_choice = col1.selectbox("Neighbourhood", neighbourhood_list(view))
     max_price = col2.number_input("Max price ($/night)", min_value=20,
                                   max_value=5000, value=300, step=10)
     min_rating = col3.slider("Min rating", 4.0, 5.0, 4.8, 0.05)
     if st.button("Find value picks"):
-        vals = query(DB, """
+        src = src_for(view)
+        vals = query(MONTHS[view], f"""
         WITH nb_median AS (
           SELECT neighbourhood_cleansed AS nb, AVG(price) AS median_price FROM (
             SELECT neighbourhood_cleansed, price,
                    ROW_NUMBER() OVER (PARTITION BY neighbourhood_cleansed ORDER BY price) AS rn,
                    COUNT(*) OVER (PARTITION BY neighbourhood_cleansed) AS cnt
-            FROM listings WHERE price > 0 AND room_type = 'Entire home/apt')
+            FROM {src} WHERE price > 0 AND room_type = 'Entire home/apt')
           WHERE rn IN ((cnt + 1) / 2, (cnt + 2) / 2) GROUP BY neighbourhood_cleansed)
         SELECT l.name, ROUND(l.price, 2) AS price,
                ROUND(m.median_price, 2) AS nb_median_price,
                l.review_scores_rating AS rating,
                l.number_of_reviews AS reviews
-        FROM listings l JOIN nb_median m ON m.nb = l.neighbourhood_cleansed
+        FROM {src} l JOIN nb_median m ON m.nb = l.neighbourhood_cleansed
         WHERE l.room_type = 'Entire home/apt' AND l.price > 0
           AND l.neighbourhood_cleansed = ?
           AND l.price <= ?
