@@ -22,15 +22,22 @@ airbnb-toronto-sql-analysis/
 │   ├── listings.csv               # June source data (downloaded, gitignored)
 │   ├── listings-2026-07.csv       # July source data (downloaded, gitignored)
 │   ├── listings-2026-08.csv       # August source data (downloaded, gitignored)
+│   ├── listings-2026-09.csv       # September source data (downloaded, gitignored)
+│   ├── calendar-2026-08.csv     # August calendar data (downloaded, gitignored)
+│   ├── reviews-2026-08.csv      # August reviews data (downloaded, gitignored; cut to 2023+ in db)
 │   ├── airbnb_toronto.db          # June SQLite database (build artifact)
 │   ├── airbnb_toronto_2026_07.db  # July SQLite database (build artifact)
-│   └── airbnb_toronto_2026_08.db  # August SQLite database (build artifact)
+│   ├── airbnb_toronto_2026_08.db  # August SQLite database (build artifact)
+│   └── airbnb_toronto_2026_09.db  # September SQLite database (build artifact)
 ├── sql/
 │   ├── 01_setup.sql        # staging import → cleaned, typed `listings` table (June)
 │   ├── 01_setup-2026-07.sql # same pipeline, July CSV (June script untouched)
 │   ├── 01_setup-2026-08.sql # same pipeline, August CSV (June script untouched)
+│   ├── 01_setup-2026-09.sql # same pipeline, September CSV (June script untouched)
 │   ├── 02_exploration.sql  # data-quality & exploratory checks (Q0–Q8)
-│   └── 03_analysis.sql     # 11 business questions (A1–A11)
+│   ├── 03_analysis.sql     # 11 business questions (A1–A11)
+│   ├── 04_calendar_analysis.sql  # real occupancy from calendar.csv (C1–C6, August)
+│   └── 05_reviews_analysis.sql   # review volume/velocity/text trends (R1–R6, August)
 ├── scripts/
 │   ├── make_charts.py      # generates docs/charts from the June db (matplotlib)
 │   └── make_charts_month.py # parameterized variant: --db --outdir --label
@@ -38,10 +45,14 @@ airbnb-toronto-sql-analysis/
 │   ├── findings.md             # June findings report (filled)
 │   ├── findings-2026-07.md     # July findings report (filled)
 │   ├── findings-2026-08.md     # August findings report (filled)
+│   ├── findings-2026-09.md     # September findings report (filled)
 │   ├── query_output.txt        # June: actual output of sql/03_analysis.sql
 │   ├── query_output-2026-07.txt # July: actual analysis output
 │   ├── query_output-2026-08.txt # August: actual analysis output
-│   └── charts/                 # June figures + charts/2026-07/ and charts/2026-08/
+│   ├── query_output-2026-09.txt # September: actual analysis output
+│   ├── query_output-04-calendar.txt # August: calendar occupancy queries
+│   ├── query_output-05-reviews.txt  # August: review-trend queries
+│   └── charts/                 # June figures + charts/2026-07/, 2026-08/, 2026-09/
 └── README.md
 ```
 
@@ -98,7 +109,7 @@ gunzip -c data/listings.csv.gz > data/listings.csv
 
 ## Monthly snapshots
 
-The same 20-query pipeline was re-run on two newer Inside Airbnb snapshots —
+The same 20-query pipeline was re-run on three newer Inside Airbnb snapshots —
 schemas verified identical (90 columns, same header order), so the analysis
 queries ran unchanged:
 
@@ -107,11 +118,29 @@ queries ran unchanged:
 | June 2026 | 2026-06-15 | 2026-06-16 → 2026-06-28 | 22,198 | [findings.md](docs/findings.md) |
 | July 2026 | 2026-07-14 | 2026-07-14 → 2026-07-16 | 22,212 | [findings-2026-07.md](docs/findings-2026-07.md) |
 | August 2026 | 2026-08-15 | 2026-08-15 → 2026-08-27 | 22,257 | [findings-2026-08.md](docs/findings-2026-08.md) |
+| September 2026 | 2026-09-16 | 2026-09-17 → 2026-09-18 | 22,050 | [findings-2026-09.md](docs/findings-2026-09.md) |
 
 Biggest month-over-month shifts: the June→July superhost price reversal
 (superhosts went from pricing *below* regular hosts to *above*, and stayed
-there in August); the entire-home median sliding $265 → $254; and the
-no-price-quote share rising from 17.7% to ~21%.
+there through September); the entire-home median sliding $265 → $254 →
+$230 across the four months; and the no-price-quote share rising from
+17.7% (June) to 24.0% (September).
+
+## Calendar & reviews (August 2026)
+
+The August database goes beyond the listings snapshot: `calendar.csv.gz`
+(8,123,819 rows — every listing × 365 forward days) and `reviews.csv.gz`
+(709,449 rows, db keeps 2023+ = 447,129) were imported as typed `calendar`
+and `reviews` tables. New queries: `sql/04_calendar_analysis.sql`
+(true occupancy, estimate-bias check, seasonal availability curve, lead
+time, min-nights) and `sql/05_reviews_analysis.sql` (36-month volume
+trend, review length, velocity leaders, naive text signal). Results are in
+sections 6–7 of the
+[August findings report](docs/findings-2026-08.md).
+
+Headline: true forward occupancy averages **47.8%**, running ~2.4× above
+Inside Airbnb's backward estimate (~20%); review volume peaked at 24,685
+reviews (Jul 2026); 56% of listings require 8–30-night minimum stays.
 
 ## Key findings (June 2026 snapshot)
 
@@ -180,3 +209,17 @@ Airbnb's models, not Airbnb's books) and ideas for extension
 > **Note:** `data/` (CSVs + built SQLite dbs, ~476 MB) is gitignored. Clone,
 > then re-download the data and run e.g. `sql/01_setup-2026-08.sql` to
 > rebuild a month's database.
+
+## Interactive dashboard
+
+A Streamlit dashboard over all four monthly snapshots (June → September 2026)
+lives in [`dashboard/`](dashboard/): KPI cards and month-over-month trends,
+neighbourhoods, hosts, pricing, true (calendar-derived) occupancy and reviews
+for August, plus an interactive value-finder built on the A11 query.
+
+```bash
+cd dashboard
+./.venv/bin/streamlit run app.py
+```
+
+See [`dashboard/README.md`](dashboard/README.md) for the tab-by-tab tour.

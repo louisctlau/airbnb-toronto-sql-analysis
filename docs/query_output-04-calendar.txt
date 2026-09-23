@@ -1,0 +1,50 @@
+avg_true_occupancy_pct  listings
+----------------------  --------
+47.8                    22257   
+neighbourhood                        listings  true_occ_pct  est_occ_pct  bias_pts_true_minus_est
+-----------------------------------  --------  ------------  -----------  -----------------------
+Waterfront Communities-The Island    3786      49.9          23.6         26.3                   
+Niagara                              910       55.2          19.0         36.2                   
+Church-Yonge Corridor                723       46.6          18.3         28.3                   
+Annex                                722       50.0          19.1         30.8                   
+Moss Park                            668       47.4          21.1         26.3                   
+Kensington-Chinatown                 649       46.1          19.5         26.6                   
+Trinity-Bellwoods                    555       56.4          21.5         34.9                   
+Dovercourt-Wallace Emerson-Junction  538       53.9          21.6         32.3                   
+Bay Street Corridor                  502       47.6          18.1         29.4                   
+Willowdale East                      456       42.4          12.4         30.0                   
+cal_month  listing_days  pct_available
+---------  ------------  -------------
+2026-08    318777        33.4         
+2026-09    667710        47.6         
+2026-10    689967        58.9         
+2026-11    667710        61.0         
+2026-12    689967        59.9         
+2027-01    689967        62.0         
+2027-02    623196        57.7         
+2027-03    689967        54.7         
+2027-04    667710        54.9         
+2027-05    689967        47.9         
+2027-06    667710        43.2         
+2027-07    689967        43.1         
+2027-08    371204        37.6         
+lead_time_band       listings  pct 
+-------------------  --------  ----
+0–7 days             20170     90.6
+8–30 days            265       1.2 
+31–90 days           207       0.9 
+90+ days             597       2.7 
+No bookings in 365d  1018      4.6 
+min_nights_band  listings  pct 
+---------------  --------  ----
+1 night          5168      23.2
+2–3 nights       3200      14.4
+4–7 nights       342       1.5 
+8–30 nights      12478     56.1
+31+ nights       1069      4.8 
+room_type        listings  avg_min_nights  avg_true_occ_pct
+---------------  --------  --------------  ----------------
+Entire home/apt  15109     22.0            48.9            
+Hotel room       58        2.5             22.5            
+Private room     7068      21.1            45.7            
+Shared room      22        16.0            30.3            

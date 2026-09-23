@@ -37,6 +37,20 @@ pipeline as the June and July reports. Three takeaways stand out:
 > hosts still ~52–53% of priced supply, Black Creek still the (small-n)
 > revenue leader.
 
+> ### Calendar & reviews (new in this edition)
+> - **Real forward occupancy is 47.8%** — the average listing is unavailable
+>   for 47.8% of the next 365 days (calendar truth) vs only ~20% implied by
+>   Inside Airbnb's backward-looking `estimated_occupancy_l365d` model. The
+>   estimate runs ~2.4× too low everywhere (e.g. Waterfront: 49.9% true vs
+>   23.6% estimated; Niagara: 55.2% vs 19.0%).
+> - **56% of listings require 8–30-night minimum stays**, with 23% at 1
+>   night — consistent with Toronto's minimum-stay short-term rental rules
+>   pushing professional supply toward monthly bookings.
+> - **Review volume keeps growing:** 24,685 reviews in July 2026 (peak) vs
+>   3,633 in Jan 2023; review text is remarkably stable — same top words
+>   ("stay", "great", "place", "location"), ~11% positive-word rate in both
+>   2023 and 2026.
+
 > Verified data profile:
 > - Listings analysed: 22,257 (all ids unique — 0 duplicates)
 > - Scrape window: 2026-08-15 → 2026-08-27
@@ -58,6 +72,17 @@ pipeline as the June and July reports. Three takeaways stand out:
   (excluded from price math); 20.3% never reviewed; no negative prices, bad
   ratings, or impossible dates found.
 - **Analysis:** `sql/03_analysis.sql` run unchanged (11 questions; same
+  CTE/window-function/self-join techniques as June/July), plus
+  `sql/04_calendar_analysis.sql` (true occupancy from calendar data) and
+  `sql/05_reviews_analysis.sql` (review trends) — see sections 6–7.
+- **Calendar & reviews (this edition):** the August db was extended with two
+  new tables from the same release: `calendar` (8,123,819 rows — 22,257
+  listings × 365 future days; typed from the all-TEXT staging import,
+  `available` 't'/'f' → 1/0) and `reviews` (447,129 rows, restricted to
+  `date >= '2023-01-01'` — a documented cut from 709,449 raw rows to bound
+  db size; the full raw file is kept at `data/reviews-2026-08.csv.gz`).
+  Indexes on `calendar(listing_id)`, `calendar(date)`, `reviews(listing_id)`,
+  `reviews(date)`. Final db size: ~1.2 GB.
   CTEs, window functions, self-join). Schema verified identical to June
   (90 columns, same header order) — no query adaptations needed.
 
@@ -196,6 +221,152 @@ $92 vs a $182 median (177 reviews), and a 5.0★ Trinity-Bellwoods guesthouse
 at $213 vs a $269 median (147 reviews). The query remains a realistic
 "consumer tool".
 
+## 6. Real occupancy (calendar data)
+
+Queries: `sql/04_calendar_analysis.sql` → `docs/query_output-04-calendar.txt`.
+
+Caveat first: an unavailable day in the calendar mixes true bookings with
+host blocks (seasonal closures, owner use), so "occupancy" here means
+non-availability — the best forward-looking proxy available. Also,
+`estimated_occupancy_l365d` is backward-looking while the calendar looks
+forward, so the two measure different things; comparing them reveals the
+model's systematic bias rather than proving it "wrong".
+
+### 6.1 City-wide true occupancy (C1)
+
+The average Toronto listing is unavailable for **47.8% of the next 365
+days** (22,257 listings × 365 days = 8.12M listing-days).
+
+### 6.2 True vs estimated occupancy by neighbourhood (C2)
+
+| Neighbourhood | Listings | True occ. | Est. occ. | Bias (true − est) |
+|---|---|---|---|---|
+| Waterfront Communities-The Island | 3,786 | 49.9% | 23.6% | +26.3 pts |
+| Niagara | 910 | 55.2% | 19.0% | +36.2 pts |
+| Church-Yonge Corridor | 723 | 46.6% | 18.3% | +28.3 pts |
+| Annex | 722 | 50.0% | 19.1% | +30.8 pts |
+| Moss Park | 668 | 47.4% | 21.1% | +26.3 pts |
+| Kensington-Chinatown | 649 | 46.1% | 19.5% | +26.6 pts |
+| Trinity-Bellwoods | 555 | 56.4% | 21.5% | +34.9 pts |
+| Dovercourt-Wallace Emerson-Junction | 538 | 53.9% | 21.6% | +32.3 pts |
+| Bay Street Corridor | 502 | 47.6% | 18.1% | +29.4 pts |
+| Willowdale East | 456 | 42.4% | 12.4% | +30.0 pts |
+
+The estimate is biased low **everywhere** — true occupancy runs roughly
+2.4× the model (Niagara: 55.2% true vs 19.0% estimated). Anyone valuing
+listings off `estimated_revenue_l365d`/`estimated_occupancy_l365d` alone
+is systematically under-counting. Trinity-Bellwoods (56.4%) and Niagara
+(55.2%) are the most-booked core neighbourhoods.
+
+![True vs estimated occupancy](charts/2026-08/occupancy_true_vs_estimate.png)
+
+### 6.3 Seasonal availability curve (C3)
+
+Share of listing-days bookable by calendar month: 33.4% (Aug 2026) →
+47.6% (Sep) → 58.9% (Oct) → 61.0% (Nov) → 59.9% (Dec) → **62.0% (Jan
+2027)** → 57.7% (Feb) → 54.7% (Mar) → 54.9% (Apr) → 47.9% (May) → 43.2%
+(Jun) → 43.1% (Jul) → 37.6% (Aug 2027). Bookability peaks in mid-winter
+and troughs in summer — hosts block or book out the warm months, leaving
+January the most open month. (August 2026 is partially the scrape month
+itself; the trailing Aug-2027 value is partial-window.)
+
+![Availability curve](charts/2026-08/availability_curve.png)
+
+### 6.4 Booking lead-time proxy (C4)
+
+Days from a listing's first calendar date to its first unavailable day:
+
+| Lead-time band | Listings | % |
+|---|---|---|
+| 0–7 days | 20,170 | 90.6% |
+| 8–30 days | 265 | 1.2% |
+| 31–90 days | 207 | 0.9% |
+| 90+ days | 597 | 2.7% |
+| No unavailable days in 365d | 1,018 | 4.6% |
+
+Interpret with care: 90.6% of listings have *something* blocking the first
+week — mostly long-stay blocks or host holds, not genuine last-minute
+bookings. The 4.6% fully-available listings are likely dormant supply.
+
+### 6.5 Minimum-night stays (C5–C6)
+
+| Min-nights band | Listings | % |
+|---|---|---|
+| 1 night | 5,168 | 23.2% |
+| 2–3 nights | 3,200 | 14.4% |
+| 4–7 nights | 342 | 1.5% |
+| 8–30 nights | 12,478 | 56.1% |
+| 31+ nights | 1,069 | 4.8% |
+
+By room type: entire homes average a 22.0-night minimum (48.9% true
+occupancy), private rooms 21.1 nights (45.7%), hotel rooms 2.5 nights
+(22.5%), shared rooms 16.0 nights (30.3%). The 56% mass in the 8–30 band
+is consistent with Toronto's minimum-stay short-term rental rules pushing
+professional supply toward ~28-day bookings.
+
+## 7. Review trends
+
+Queries: `sql/05_reviews_analysis.sql` → `docs/query_output-05-reviews.txt`.
+The `reviews` table covers 2023-01 → 2026-08 (447,129 reviews); no per-review
+rating exists in this file, so this section covers volume, velocity and
+text signals only.
+
+### 7.1 Review volume keeps growing (R1)
+
+Monthly review volume: 3,633 (Jan 2023) → 24,685 (Jul 2026, peak).
+Summer peaks each year (Aug 2024: 14,130; Aug 2025: 18,678), winter
+troughs (Feb: ~3.4–6.0k). August 2026 shows 10,804 but is partial (scrape
+ended 08-27). Across 2024–2026 full months, July averages the most reviews
+(17,917) and February the fewest (5,065) — see seasonality (R6).
+
+![Review volume](charts/2026-08/review_volume_36mo.png)
+
+### 7.2 Review length is flat (R2)
+
+Average review length stays ~34–40 words across all 44 months, with a mild
+summer bump (reviews written in summer run ~4 words longer than winter
+ones). Guests aren't writing more or less over time — volume grows, but the
+average review's shape doesn't.
+
+### 7.3 Fastest-growing velocity (R3, R5)
+
+Most reviews in the last 90 days: "Luxury Queen Bed & Bath (Newly
+Renovated)" — a Kensington-Chinatown private room at $224 with 92
+reviews in 90 days (710 total, 4.85★). It also leads the last-12-months
+ranking with 395 reviews. Notably, all 15 of the densest 12-month review
+streams are **private rooms** — high-turnover budget stays generate the
+review volume, consistent with the June A6 finding.
+
+### 7.4 Review concentration (R4)
+
+| Reviews since 2023 | Listings | % |
+|---|---|---|
+| 0 | 6,877 | 30.9% |
+| 1–5 | 5,208 | 23.4% |
+| 6–20 | 4,630 | 20.8% |
+| 21–50 | 2,590 | 11.6% |
+| 51+ | 2,952 | 13.3% |
+
+A third of listings have no reviews since 2023; the top 13.3% (51+
+reviews) carry the bulk of visible review activity.
+
+### 7.5 What guests write (text signal)
+
+Naive word/bigram frequency over review text (stopwords stripped, HTML
+stripped; sentiment wordlist counts are crude counts, not a real
+sentiment model — documented as naive):
+
+- 2026 top words: stay (64,636), great (56,873), place (51,216), location
+  (33,322), host (31,255), clean (30,287); 2023 ranking is nearly identical
+  (place/stay/great/location/host/clean).
+- Top bigrams, both periods: "great location" (9,591 in 2026; 6,799 in
+  2023), "highly recommend", "great stay", "great place", "walking
+  distance", "exactly described", "host responsive".
+- Naive positive-word rate: 10.87% (2026) vs 11.02% (2023); negative-word
+  rate: 0.34% vs 0.29%. Effectively unchanged — review language is
+  overwhelmingly and stably positive; location, cleanliness and host
+  responsiveness dominate the vocabulary.
+
 ## 4. Limitations
 
 - **Single snapshot:** no true time series; occupancy/revenue are modelled
@@ -214,9 +385,10 @@ at $213 vs a $269 median (147 reviews). The query remains a realistic
 ## 5. Next steps
 
 - [x] Re-run on the August snapshot (this report).
-- [ ] Add `calendar.csv` (365-day availability per listing) for real
-      occupancy analysis instead of estimates.
-- [ ] Add `reviews.csv` for review-velocity and sentiment trends over time.
+- [x] Add `calendar.csv` (365-day availability per listing) for real
+      occupancy analysis instead of estimates → section 6.
+- [x] Add `reviews.csv` for review-velocity and sentiment trends over time
+      → section 7.
 - [ ] Build a proper month-over-month trends table/dashboard once 3+
       snapshots exist (June–August now qualify).
 - [ ] Build a dashboard (Metabase / Streamlit) on top of these queries.
@@ -237,9 +409,16 @@ Query outputs for every figure above are the actual run results saved at
 sqlite3 data/airbnb_toronto_2026_08.db < sql/03_analysis.sql > docs/query_output-2026-08.txt
 ```
 
-Charts were regenerated for this snapshot (same 6 figures, August labels):
+Charts were regenerated for this snapshot (now 9 figures, August labels):
 
 ```bash
 python3 scripts/make_charts_month.py --db data/airbnb_toronto_2026_08.db \
     --outdir docs/charts/2026-08 --label "August 2026"
+```
+
+Calendar/review query outputs:
+
+```bash
+sqlite3 data/airbnb_toronto_2026_08.db < sql/04_calendar_analysis.sql > docs/query_output-04-calendar.txt
+sqlite3 data/airbnb_toronto_2026_08.db < sql/05_reviews_analysis.sql > docs/query_output-05-reviews.txt
 ```

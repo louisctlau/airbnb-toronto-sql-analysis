@@ -1,0 +1,152 @@
+review_month  reviews  active_listings
+------------  -------  ---------------
+2023-01       3633     1642           
+2023-02       3356     1409           
+2023-03       4851     1800           
+2023-04       6109     2117           
+2023-05       7683     2375           
+2023-06       9176     2626           
+2023-07       9760     2840           
+2023-08       10252    3076           
+2023-09       9866     3002           
+2023-10       8781     2831           
+2023-11       6118     2365           
+2023-12       5151     2276           
+2024-01       4536     2230           
+2024-02       4392     1975           
+2024-03       6393     2508           
+2024-04       7709     2805           
+2024-05       9336     3225           
+2024-06       11991    3610           
+2024-07       12323    3833           
+2024-08       14130    4225           
+2024-09       13005    3978           
+2024-10       10116    3530           
+2024-11       11427    3935           
+2024-12       6924     3053           
+2025-01       5256     2729           
+2025-02       4756     2334           
+2025-03       7385     3077           
+2025-04       8654     3496           
+2025-05       11498    3932           
+2025-06       13723    4416           
+2025-07       16744    4826           
+2025-08       18678    5291           
+2025-09       17174    5036           
+2025-10       13700    4518           
+2025-11       10231    3997           
+2025-12       7747     3650           
+2026-01       6641     3382           
+2026-02       6047     3030           
+2026-03       10304    4209           
+2026-04       12967    4757           
+2026-05       19335    6329           
+2026-06       23782    7330           
+2026-07       24685    7648           
+2026-08       10804    5399           
+review_month  avg_words
+------------  ---------
+2023-01       36.5     
+2023-02       34.4     
+2023-03       35.8     
+2023-04       37.6     
+2023-05       38.0     
+2023-06       39.3     
+2023-07       40.4     
+2023-08       39.5     
+2023-09       38.3     
+2023-10       37.3     
+2023-11       36.1     
+2023-12       34.5     
+2024-01       34.7     
+2024-02       34.2     
+2024-03       35.0     
+2024-04       35.9     
+2024-05       36.6     
+2024-06       38.0     
+2024-07       39.9     
+2024-08       39.0     
+2024-09       37.5     
+2024-10       37.1     
+2024-11       38.9     
+2024-12       34.3     
+2025-01       34.5     
+2025-02       33.9     
+2025-03       34.9     
+2025-04       36.4     
+2025-05       36.2     
+2025-06       39.1     
+2025-07       40.4     
+2025-08       39.4     
+2025-09       38.4     
+2025-10       36.6     
+2025-11       35.6     
+2025-12       35.0     
+2026-01       35.3     
+2026-02       34.2     
+2026-03       35.3     
+2026-04       36.9     
+2026-05       37.4     
+2026-06       38.1     
+2026-07       39.2     
+2026-08       38.9     
+name                                                neighbourhood                        room_type        reviews_90d  total_reviews  pct_of_total_in_90d
+--------------------------------------------------  -----------------------------------  ---------------  -----------  -------------  -------------------
+Luxury Queen Bed & Bath (Newly Renovated)           Kensington-Chinatown                 Private room     92           710            13.0               
+ChicCondo Sleeps 4, Parking, 10 mins to Exhibition  Niagara                              Entire home/apt  59           59             100.0              
+A  home like room minutes away from airport         Elms-Old Rexdale                     Private room     50           401            12.5               
+Explore Toronto in Style + 1 Free Parking           Niagara                              Entire home/apt  42           60             70.0               
+Cozy Private Room1 – 8 Min to Airport FREE Parking  Kingsview Village-The Westway        Private room     40           395            10.1               
+Cozy Private Suite close to Airport w/free parking  Kingsview Village-The Westway        Private room     38           528            7.2                
+Modern 2 BR Condo: By Scotiabank Arena - City View  Waterfront Communities-The Island    Entire home/apt  37           87             42.5               
+Clean quiet house at Shawnee Circle, North York     Pleasant View                        Private room     37           53             69.8               
+Private Room in Downtown Toronto RM2                Dovercourt-Wallace Emerson-Junction  Private room     36           442            8.1                
+Luxury 1+Den w/ Parking | Downtown Toronto          Dovercourt-Wallace Emerson-Junction  Entire home/apt  36           38             94.7               
+Big room with tv and balcony, nice backyard view.   Pleasant View                        Private room     36           41             87.8               
+Private Basement Suite Greektown Near Subway        Broadview North                      Entire home/apt  35           36             97.2               
+CN Tower Steps Away + 1 Free Parking                Waterfront Communities-The Island    Entire home/apt  35           44             79.5               
+Downtown Living with City Views + 1 Free Parking    Bay Street Corridor                  Entire home/apt  35           42             83.3               
+Stylish Downtown Condo | Near Top Attractions       Niagara                              Entire home/apt  35           37             94.6               
+Private Entrance Suite Free Parking next/Airport    Kingsview Village-The Westway        Private room     34           486            7.0                
+Chic Retreat Near Lakeshore + 1 Free Parking        Niagara                              Entire home/apt  34           52             65.4               
+Luxury Downtown Condo | Sleeps 4 | FREE Parking     Waterfront Communities-The Island    Entire home/apt  34           34             100.0              
+Waterfront Condo | Lakeview Escape | Free Parking   Niagara                              Entire home/apt  34           34             100.0              
+Private suite all to yourself. Separate entrance.   Danforth East York                   Private room     33           554            6.0                
+review_count_band  listings  pct_of_listings
+-----------------  --------  ---------------
+0                  6877      30.9           
+1–5                5208      23.4           
+6–20               4630      20.8           
+21–50              2590      11.6           
+51+                2952      13.3           
+name                                                neighbourhood                  room_type     price   rating  reviews_12mo
+--------------------------------------------------  -----------------------------  ------------  ------  ------  ------------
+Luxury Queen Bed & Bath (Newly Renovated)           Kensington-Chinatown           Private room  224.0   4.85    395         
+A  home like room minutes away from airport         Elms-Old Rexdale               Private room  47.0    4.84    159         
+Private suite all to yourself. Separate entrance.   Danforth East York             Private room  153.31  4.87    159         
+Cozy Private Suite close to Airport w/free parking  Kingsview Village-The Westway  Private room  119.0   4.96    150         
+Private Entrance Suite Free Parking next/Airport    Kingsview Village-The Westway  Private room  126.0   4.91    133         
+Private Bath Free Parking 8 min to Pearson Airport  Markland Wood                  Private room  100.0   4.91    126         
+Midtown location near Danforth/Broadview            Playter Estates-Danforth       Private room  109.0   4.94    123         
+Room near Kennedy Station                           Ionview                        Private room  53.0    4.89    123         
+100% Private Studio/Own Entrance! Not Shared!       Danforth East York             Private room  172.0   4.92    122         
+Cozy Private Room1 – 8 Min to Airport FREE Parking  Kingsview Village-The Westway  Private room  120.91  4.92    118         
+Private 2beds in Humber Valley -10mins to  Airport  Edenbridge-Humber Valley       Private room  145.0   4.88    116         
+Room in Toronto Downtown Yonge-Dundas               Church-Yonge Corridor          Private room  185.0   5.0     116         
+Independent Living, Private Studio                  Annex                          Private room  197.0   4.94    115         
+Garden Oasis | Fire Pit | BBQ | 20 min DT Toronto   Oakridge                       Private room  231.0   4.93    114         
+Separate Entry & Private Bath Downtown Cozy Suite2  Trinity-Bellwoods              Private room  144.2   4.9     113         
+month_num  avg_reviews_per_month
+---------  ---------------------
+01         5478.0               
+02         5065.0               
+03         8027.0               
+04         9777.0               
+05         13390.0              
+06         16499.0              
+07         17917.0              
+08         16404.0              
+09         15090.0              
+10         11908.0              
+11         10829.0              
+12         7336.0               

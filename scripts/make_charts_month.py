@@ -335,4 +335,118 @@ ax1.legend([bars, line[0]], ["Avg nightly price", "Marginal cost of extra bedroo
            loc="upper left", frameon=False, fontsize=9)
 save(fig, "bedroom_marginal_cost.png")
 
-print("\nDone — 6 charts written to", OUT)
+# ---------------------------------------------------------------------------
+# 7. occupancy_true_vs_estimate.png — calendar truth vs Inside Airbnb model
+#    (C2 semantics). Requires `calendar` table; skipped if absent.
+# ---------------------------------------------------------------------------
+has_calendar = cur.execute(
+    "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='calendar'"
+).fetchone()[0] == 1
+
+if has_calendar:
+    rows = cur.execute("""
+    WITH cal AS (
+        SELECT listing_id,
+               ROUND(100.0 * SUM(1 - available) / COUNT(*), 1) AS true_occ_pct
+        FROM calendar
+        GROUP BY listing_id
+    )
+    SELECT l.neighbourhood_cleansed AS nb,
+           COUNT(*) AS listings,
+           ROUND(AVG(cal.true_occ_pct), 1) AS true_occ,
+           ROUND(AVG(100.0 * l.estimated_occupancy_l365d / 365), 1) AS est_occ
+    FROM listings l
+    JOIN cal ON cal.listing_id = l.id
+    WHERE l.estimated_occupancy_l365d IS NOT NULL
+    GROUP BY l.neighbourhood_cleansed
+    ORDER BY COUNT(*) DESC
+    LIMIT 10
+    """).fetchall()
+    nbs = [r["nb"] for r in rows]
+    true_o = [r["true_occ"] for r in rows]
+    est_o = [r["est_occ"] for r in rows]
+    print("\n[7] True (calendar) vs estimated occupancy, top-10 neighbourhoods:")
+    for r in rows:
+        print(f"    {r['nb']}: true {r['true_occ']}%, estimated {r['est_occ']}%, "
+              f"bias +{r['true_occ'] - r['est_occ']:.1f} pts")
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    y = range(len(nbs))
+    w = 0.38
+    ax.barh([i - w / 2 for i in y], true_o, height=w, color=BLUE, label="True occupancy (calendar)")
+    ax.barh([i + w / 2 for i in y], est_o, height=w, color=GRAY, label="Inside Airbnb estimate")
+    ax.set_yticks(list(y))
+    ax.set_yticklabels(nbs, fontsize=8.5)
+    ax.invert_yaxis()
+    ax.set_xlabel("Occupancy (%)")
+    ax.set_title(f"Forward calendar occupancy runs ~2.4× the backward estimate\n(Toronto, {label})")
+    ax.legend(frameon=False, fontsize=9)
+    ax.set_xlim(0, max(true_o) * 1.15)
+    save(fig, "occupancy_true_vs_estimate.png")
+else:
+    print("\n[7] skipped — no calendar table")
+
+# ---------------------------------------------------------------------------
+# 8. review_volume_36mo.png — monthly review volume (R1 semantics).
+#    Requires `reviews` table; skipped if absent.
+# ---------------------------------------------------------------------------
+has_reviews = cur.execute(
+    "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='reviews'"
+).fetchone()[0] == 1
+
+if has_reviews:
+    rows = cur.execute("""
+    SELECT STRFTIME('%Y-%m', date) AS ym, COUNT(*) AS reviews
+    FROM reviews
+    GROUP BY ym
+    ORDER BY ym
+    """).fetchall()
+    months = [r["ym"] for r in rows]
+    vols = [r["reviews"] for r in rows]
+    print(f"\n[8] Monthly review volume: {len(months)} months, "
+          f"{months[0]} n={vols[0]:,}, peak {months[vols.index(max(vols))]} n={max(vols):,}")
+
+    fig, ax = plt.subplots(figsize=(11, 4.5))
+    ax.plot(months, vols, color=TEAL, linewidth=1.8)
+    ax.fill_between(months, vols, alpha=0.15, color=TEAL)
+    ax.set_ylabel("Reviews")
+    ax.set_title(f"Review volume keeps climbing — summer peak, winter lull\n({len(months)} months, {label} release)")
+    ax.set_xticks(months[::6])
+    plt.setp(ax.get_xticklabels(), rotation=30, ha="right")
+    peak_i = vols.index(max(vols))
+    ax.annotate(f"{max(vols):,} reviews", xy=(months[peak_i], max(vols)),
+                xytext=(months[peak_i], max(vols) * 1.12),
+                ha="center", fontsize=10, fontweight="bold",
+                arrowprops=dict(arrowstyle="->", color="#1a202c", lw=1.2))
+    save(fig, "review_volume_36mo.png")
+else:
+    print("\n[8] skipped — no reviews table")
+
+# ---------------------------------------------------------------------------
+# 9. availability_curve.png — share of days bookable by calendar month (C3).
+# ---------------------------------------------------------------------------
+if has_calendar:
+    rows = cur.execute("""
+    SELECT STRFTIME('%Y-%m', date) AS cal_month,
+           ROUND(100.0 * AVG(available), 1) AS pct_available
+    FROM calendar
+    GROUP BY cal_month
+    ORDER BY cal_month
+    """).fetchall()
+    cms = [r["cal_month"] for r in rows]
+    avail = [r["pct_available"] for r in rows]
+    print(f"\n[9] Availability curve: low {min(avail)}% ({cms[avail.index(min(avail))]}) → "
+          f"high {max(avail)}% ({cms[avail.index(max(avail))]})")
+
+    fig, ax = plt.subplots(figsize=(11, 4.5))
+    ax.plot(cms, avail, color=PURPLE, linewidth=2.2, marker="o", markersize=4)
+    ax.set_ylabel("Share of days available (%)")
+    ax.set_title(f"Bookability troughs in summer, peaks in winter\n(forward calendar, {label} release)")
+    ax.set_xticks(cms[::2])
+    plt.setp(ax.get_xticklabels(), rotation=30, ha="right")
+    ax.set_ylim(0, 100)
+    save(fig, "availability_curve.png")
+else:
+    print("\n[9] skipped — no calendar table")
+
+print("\nDone — 9 charts written to", OUT)
