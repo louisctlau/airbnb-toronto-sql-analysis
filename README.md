@@ -256,9 +256,12 @@ KPI cards and month-over-month trends, neighbourhoods, hosts, pricing, true
 (calendar-derived) occupancy and reviews for August, plus an interactive
 value-finder built on the A11 query.
 
+**Live app (public):**
+[airbnb-toronto-sql-analysis.streamlit.app](https://airbnb-toronto-sql-analysis-fcm6dzs4tnujlsprhnn7mm.streamlit.app/)
+
 - Browse the code:
   [`dashboard/`](https://github.com/louisctlau/airbnb-toronto-sql-analysis/tree/main/dashboard)
-- Tab-by-tab tour and deploy guide:
+- Tab-by-tab tour:
   [`dashboard/README.md`](https://github.com/louisctlau/airbnb-toronto-sql-analysis/blob/main/dashboard/README.md)
 
 The app is fully self-contained — it ships with a bundled data file
