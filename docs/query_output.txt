@@ -1,0 +1,133 @@
+neighbourhood                        listings  pct_of_city_supply  avg_price  median_price
+-----------------------------------  --------  ------------------  ---------  ------------
+Waterfront Communities-The Island    3184      17.4                393.48     319.51      
+Niagara                              749       4.1                 380.36     320.0       
+Church-Yonge Corridor                579       3.2                 320.99     249.0       
+Annex                                575       3.1                 360.13     269.13      
+Moss Park                            549       3.0                 307.91     270.33      
+Kensington-Chinatown                 502       2.7                 208.09     144.82      
+Bay Street Corridor                  450       2.5                 360.85     307.55      
+Dovercourt-Wallace Emerson-Junction  425       2.3                 204.19     147.21      
+Trinity-Bellwoods                    410       2.2                 318.57     193.38      
+Willowdale East                      372       2.0                 228.71     167.56      
+South Riverdale                      330       1.8                 282.17     206.75      
+Little Portugal                      325       1.8                 309.6      165.93      
+Palmerston-Little Italy              246       1.3                 345.53     178.56      
+Islington-City Centre West           245       1.3                 211.47     136.91      
+Mimico (includes Humber Bay Shores)  241       1.3                 321.34     209.78      
+entire_home_median  private_room_median  entire_home_premium_ratio
+------------------  -------------------  -------------------------
+265.0               85.5                 3.1                      
+host_type     listings  avg_price  avg_rating  avg_reviews_per_month  avg_total_reviews
+------------  --------  ---------  ----------  ---------------------  -----------------
+Unknown       1         368.1                                         0.0              
+Regular host  11255     286.37     4.73        1.3                    18.1             
+Superhost     7021      273.8      4.88        1.95                   56.5             
+rating_band    listings  avg_price  avg_reviews
+-------------  --------  ---------  -----------
+No rating yet  4081      319.49     0.0        
+4.80 – 5.00    10055     284.47     43.9       
+4.50 – 4.79    2974      250.25     48.6       
+Below 4.50     1167      203.38     12.7       
+availability_band  listings  avg_est_occupancy_days  implied_occupancy_pct
+-----------------  --------  ----------------------  ---------------------
+0–30 days          4210      36.6                    10.0                 
+31–90 days         3148      85.7                    23.5                 
+91–180 days        3558      92.5                    25.3                 
+181–300 days       5165      88.3                    24.2                 
+301–365 days       6117      50.2                    13.8                 
+number_of_reviews  name                                                neighbourhood                        room_type        price   rating
+-----------------  --------------------------------------------------  -----------------------------------  ---------------  ------  ------
+1388               Private suite all to yourself. Separate entrance.   Danforth East York                   Private room     154.06  4.87  
+899                Cozy and Hip Space for Rental                       Humber Heights-Westmount             Entire home/apt  120.0   4.91  
+880                1 Bedroom + Den (Office/Bidet/Balcony) near Rogers  Waterfront Communities-The Island    Entire home/apt  464.46  4.89  
+858                Private Entrance Suite Free Parking next/Airport    Kingsview Village-The Westway        Private room     142.76  4.91  
+813                Private Room in Downtown Toronto RM2                Dovercourt-Wallace Emerson-Junction  Private room     115.0   4.86  
+809                Downtown Toronto Private Apartment in the Annex     University                           Private room     329.0   4.95  
+786                Room E -$0.00 Cleaning fee!, FreeWifi and Parking!  Alderwood                            Private room     48.78   4.86  
+735                Cosy Studio Apt. in Toronto's Artsy Queen West      Niagara                              Private room     204.27  4.82  
+723                Cozy Retreat not shared main floor 2nd picture      Cliffcrest                           Private room     109.0   4.94  
+723                Private Entrance & Bath TorontoDowntown CozySuite2  Trinity-Bellwoods                    Private room     168.89  4.9   
+715                Private Suite W/Private Entrance - Entire Place     Woodbine Corridor                    Private room     160.0   4.84  
+715                Private suite in Riverdale, 5 mins to the subway    North Riverdale                      Private room             4.95  
+708                Cozy private Studio Flat, 21 min to downtown by GO  Cliffcrest                           Private room     125.53  4.92  
+694                Beautiful and Cozy Home for Rental                  Englemount-Lawrence                  Entire home/apt  172.0   4.75  
+692                Cozy Private Suite close to Airport w/free parking  Kingsview Village-The Westway        Private room     132.49  4.96  
+688                Hidden gem in Roncy/Parkdale/High Park              High Park-Swansea                    Private room     178.02  4.81  
+676                Designer Suite • CN Tower • Free Parking            Waterfront Communities-The Island    Entire home/apt  491.0   4.85  
+676                Cozy 1 Bedroom Apartment (2 beds) with Back Deck    Dovercourt-Wallace Emerson-Junction  Entire home/apt  100.82  4.79  
+670                Downtown Central Suite                              Church-Yonge Corridor                Private room     249.0   4.94  
+661                Beautiful Suite, 21 min. to downtown by Go Train    Cliffcrest                           Private room     125.53  4.93  
+review_month  listings_with_latest_review
+------------  ---------------------------
+2026-06       4767                       
+2026-05       3066                       
+2026-04       840                        
+2026-03       611                        
+2026-02       317                        
+2026-01       381                        
+2025-12       432                        
+2025-11       358                        
+2025-10       343                        
+2025-09       399                        
+2025-08       416                        
+2025-07       195                        
+2025-06       146                        
+2025-05       142                        
+2025-04       138                        
+2025-03       97                         
+2025-02       72                         
+2025-01       101                        
+2024-12       120                        
+2024-11       151                        
+2024-10       121                        
+2024-09       156                        
+2024-08       177                        
+2024-07       94                         
+host_size_band  hosts  listings  pct_of_supply  avg_listing_price
+--------------  -----  --------  -------------  -----------------
+1 listing       9700   9700      53.1           344.96           
+2–5 listings    2102   5513      30.2           208.95           
+6+ listings     245    3064      16.8           211.42           
+bedrooms  listings  avg_price  marginal_cost_of_extra_bedroom
+--------  --------  ---------  ------------------------------
+0         1         214.67                                   
+1         5720      256.57     41.9                          
+2         3865      359.07     102.5                         
+3         1499      521.57     162.49                        
+4         450       738.11     216.54                        
+5         167       1074.63    336.52                        
+neighbourhood                      listings  avg_est_annual_revenue  avg_est_occupancy_days
+---------------------------------  --------  ----------------------  ----------------------
+Black Creek                        39        66499.0                 47.9                  
+Broadview North                    26        37668.0                 133.8                 
+Waterfront Communities-The Island  3184      35414.0                 97.3                  
+Playter Estates-Danforth           37        30335.0                 108.9                 
+Wychwood                           88        27868.0                 95.4                  
+Niagara                            749       26094.0                 72.4                  
+Trinity-Bellwoods                  410       25679.0                 87.4                  
+Lambton Baby Point                 23        25344.0                 111.1                 
+The Beaches                        184       25343.0                 83.7                  
+Bridle Path-Sunnybrook-York Mills  24        25037.0                 61.0                  
+name                                                   neighbourhood                        price   nb_median_price  rating  reviews
+-----------------------------------------------------  -----------------------------------  ------  ---------------  ------  -------
+Clean & Modern Studio in Bloorcourt                    Dovercourt-Wallace Emerson-Junction  91.26   185.46           5.0     176    
+Private, Spacious,Separate Entrance, Bath, Parking     Lambton Baby Point                   190.01  199.43           5.0     162    
+Bright Modern Guesthouse in Vibrant Trinity-Bellwoods  Trinity-Bellwoods                    212.39  309.92           5.0     147    
+Explore Little Italy from a Chic Edwardian House       Palmerston-Little Italy              239.34  271.0            5.0     127    
+Two Storey Loft - steps from FIFA World Cup            Niagara                              295.57  338.0            5.0     104    
+Downtown Toronto - Amazing view of the city!           Waterfront Communities-The Island    151.04  330.94           5.0     99     
+Cozy and Modern Lower-Level Suite in Corso Italia      Corso Italia-Davenport               149.0   196.0            5.0     99     
+Cozy apartment with patio near Trinity Bellwoods       Niagara                              314.0   338.0            5.0     87     
+Stylish Private Suite • King Bed • Central Toronto     Cabbagetown-South St.James Town      238.0   245.39           5.0     80     
+Hot pad in cool hood!                                  Little Portugal                      122.15  221.56           5.0     69     
+Designer Beach Retreat.                                East End-Danforth                    136.71  161.93           5.0     61     
+Updated Private 3Bd/1.5Ba / Guests Suite/2Parking      Bathurst Manor                       157.25  198.72           5.0     60     
+Garden studio at Bloor West - Close to subway          Lambton Baby Point                   88.5    199.43           5.0     58     
+Modern 2BR Condo Stunning Views, Walk Everywhere       Waterfront Communities-The Island    297.0   330.94           5.0     58     
+Cozy & Modern Downtown 1BR Condo w CN Tower View       Waterfront Communities-The Island    304.0   330.94           5.0     56     
+Luxury 1 bedroom Sleeps 2-Beach Retreat                The Beaches                          228.24  238.22           5.0     54     
+Vibrant, Luxurious & Chic King West Designer Loft      Waterfront Communities-The Island    210.83  330.94           5.0     53     
+"Yorkville Loft + Office -Near Four Seasons Hotel"     Annex                                180.57  290.67           5.0     52     
+The Signature View of CN Tower in Downtown Toronto     Waterfront Communities-The Island    279.33  330.94           5.0     51     
+Luxury Lakeview Apartment                              Waterfront Communities-The Island    223.18  330.94           5.0     51     
