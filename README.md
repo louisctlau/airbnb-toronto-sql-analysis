@@ -251,14 +251,23 @@ Airbnb's models, not Airbnb's books) and ideas for extension
 
 ## Interactive dashboard
 
-A Streamlit dashboard over all four monthly snapshots (June → September 2026)
-lives in [`dashboard/`](dashboard/): KPI cards and month-over-month trends,
-neighbourhoods, hosts, pricing, true (calendar-derived) occupancy and reviews
-for August, plus an interactive value-finder built on the A11 query.
+A Streamlit dashboard over all four monthly snapshots (June → September 2026):
+KPI cards and month-over-month trends, neighbourhoods, hosts, pricing, true
+(calendar-derived) occupancy and reviews for August, plus an interactive
+value-finder built on the A11 query.
+
+- Browse the code:
+  [`dashboard/`](https://github.com/louisctlau/airbnb-toronto-sql-analysis/tree/main/dashboard)
+- Tab-by-tab tour and deploy guide:
+  [`dashboard/README.md`](https://github.com/louisctlau/airbnb-toronto-sql-analysis/blob/main/dashboard/README.md)
+
+The app is fully self-contained — it ships with a bundled data file
+(`dashboard/data/market_summary.db`, 27 MB), so it runs without the raw
+CSVs. Deploy it on Streamlit's free hosting by following the "Deploy on
+Streamlit Community Cloud" steps in `dashboard/README.md` (a 2-minute
+click-through, no secrets or config needed). For local development:
 
 ```bash
 cd dashboard
 ./.venv/bin/streamlit run app.py
 ```
-
-See [`dashboard/README.md`](dashboard/README.md) for the tab-by-tab tour.
