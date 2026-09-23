@@ -8,9 +8,20 @@ clean, portfolio-ready SQL.
 
 - **Source:** [Inside Airbnb](https://insideairbnb.com/get-the-data/) — detailed
   listings file, Toronto, Ontario, Canada
-- **Snapshot:** 15 June 2026 release (rows scraped 2026-06-16 → 2026-06-28)
-- **File:** `data/listings.csv` (22,198 listings × 90 columns, decompressed from
-  `listings.csv.gz`)
+- **Snapshots:** four monthly releases, June → September 2026 (schemas verified
+  identical: 90 columns, same header order)
+
+| Snapshot | Release | Scrape window | Listings |
+|----------|---------|---------------|----------|
+| June 2026 | 2026-06-15 | 2026-06-16 → 2026-06-28 | 22,198 |
+| July 2026 | 2026-07-14 | 2026-07-14 → 2026-07-16 | 22,212 |
+| August 2026 | 2026-08-15 | 2026-08-15 → 2026-08-27 | 22,257 |
+| September 2026 | 2026-09-16 | 2026-09-17 → 2026-09-18 | 22,050 |
+
+- **Files:** `data/listings-2026-MM.csv` (decompressed from the matching
+  `listings.csv.gz`); August also has `calendar-2026-08.csv`
+  (8,123,819 rows: every listing × 365 forward days) and
+  `reviews-2026-08.csv` (709,449 rows, db keeps 2023+ = 447,129)
 - **License:** [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
 - **Grain:** one row per Airbnb listing at scrape time (prices in CAD)
 
@@ -81,7 +92,10 @@ gunzip -c data/listings.csv.gz > data/listings.csv
 
 ## Data-quality summary (verified)
 
-| Check | Result |
+Same gates run on every monthly snapshot — zero duplicate ids, zero negative
+prices, zero impossible review dates in all four months:
+
+| Check (June 2026) | Result |
 |---|---|
 | Listings loaded | 22,198 |
 | Duplicate listing ids | 0 |
@@ -142,49 +156,74 @@ Headline: true forward occupancy averages **47.8%**, running ~2.4× above
 Inside Airbnb's backward estimate (~20%); review volume peaked at 24,685
 reviews (Jul 2026); 56% of listings require 8–30-night minimum stays.
 
-## Key findings (June 2026 snapshot)
+## Key findings (June → September 2026)
 
-- **Entire-home premium: 3.1×** — median $265/night for an entire home vs
-  $85.50 for a private room. Waterfront Communities-The Island dominates
-  supply with 3,184 listings (17.4% of the city); Kensington-Chinatown is
-  the bargain corner at a $145 median.
+Four monthly snapshots, same 20-query pipeline each time — so every figure
+below is comparable month to month (charts show the latest, September 2026):
 
-  ![Listings by neighbourhood](docs/charts/listings_by_neighbourhood.png)
-  ![Median price by room type](docs/charts/median_price_by_room_type.png)
+- **Entire-home prices fell four months straight** — median $265 (June) →
+  $256.91 → $254 → **$230** (September), a 13% slide. Private rooms were
+  steadier ($85.50 → $81), so the entire-home premium narrowed from 3.10×
+  to 2.84×. Waterfront Communities-The Island still dominates supply at
+  ~17–18% of priced listings every month.
 
-- **Superhosts win on value, not price** — superhosts charge *less* than
-  regular hosts on average ($273.80 vs $286.37) while rating 4.88 vs 4.73
-  and earning ~3× the reviews (1.95 vs 1.30 reviews/month).
+  ![Listings by neighbourhood](docs/charts/2026-09/listings_by_neighbourhood.png)
+  ![Median price by room type](docs/charts/2026-09/median_price_by_room_type.png)
 
-  ![Superhost vs regular host](docs/charts/superhost_vs_regular.png)
+- **The superhost price reversal** — in June, superhosts charged *less* than
+  regular hosts on average ($273.80 vs $286.37). From July onward they
+  consistently charge *more* (September: $247.73 vs $233.76, ~6% premium).
+  Two-and-a-half months of consistency makes June the outlier, not the
+  rule. The quality gap holds throughout: 4.87–4.89 vs 4.71–4.73, with
+  superhosts earning ~1.5× the reviews per month.
 
-- **Ratings pay** — average price rises with rating band ($203 below 4.50 →
-  $284 at 4.80–5.00). Unrated listings price highest ($319), likely new
-  hosts pricing ambitiously before reviews arrive.
+  ![Superhost vs regular host](docs/charts/2026-09/superhost_vs_regular.png)
 
-  ![Price by rating band](docs/charts/price_by_rating_band.png)
+- **Ratings pay** — average price rises with rating band in every snapshot
+  ($203 below 4.50 → $284 at 4.80–5.00 in June). Unrated listings price
+  highest ($319), likely new hosts pricing ambitiously before reviews
+  arrive.
 
-- **Availability sweet spot** — estimated occupancy peaks (~25%) for
-  listings available 91–180 days/yr; listings bookable 301+ days sit at
-  13.8%, suggesting a long tail of stale supply.
+  ![Price by rating band](docs/charts/2026-09/price_by_rating_band.png)
 
-  ![Occupancy by availability](docs/charts/occupancy_by_availability.png)
+- **Availability sweet spot** — occupancy peaks (~25%) for listings
+  available 91–180 days/yr; listings bookable 301+ days sit at 13.8%,
+  suggesting a long tail of stale supply.
+
+  ![Occupancy by availability](docs/charts/2026-09/occupancy_by_availability.png)
 
 - **Bedroom economics** — the marginal nightly cost of an extra bedroom
   climbs from +$103 (1→2 beds) to +$337 (4→5 beds), via `LAG()` over
-  grouped averages.
+  grouped averages. In September the curve bent for the first time
+  (the 3→4 step came in cheaper than the 2→3 step).
 
-  ![Bedroom marginal cost](docs/charts/bedroom_marginal_cost.png)
+  ![Bedroom marginal cost](docs/charts/2026-09/bedroom_marginal_cost.png)
 
-- **Host concentration** — 53.1% of priced supply sits with single-listing
-  hosts (avg $344.96/night) vs 16.8% with 6+ listing operators (avg
-  $211.42): casual hosts price high, professionals compete on volume.
+- **The no-quote drift** — listings without an active price rose from 17.7%
+  (June) to 24.0% (September); the priced population is at a four-month
+  low of 16,760. Watch this one — it's the biggest structural change in
+  the series.
 
-Full analysis: [`docs/findings.md`](docs/findings.md).
+- **Host concentration is stable** — ~53% of priced supply sits with
+  single-listing hosts every month (avg $345/night in June) vs ~17% with
+  6+ listing operators (avg $211): casual hosts price high, professionals
+  compete on volume.
+
+- **True occupancy beats the estimates** — calendar data (August) puts real
+  forward occupancy at **47.8%**, ~2.4× Inside Airbnb's backward estimate
+  (~20%), low everywhere. Winter is the bookable season (62% of days
+  available in January); 56% of listings require 8–30-night minimum stays,
+  consistent with Toronto's STR rules.
+
+Full analyses: [`docs/findings.md`](docs/findings.md) (June),
+[`docs/findings-2026-07.md`](docs/findings-2026-07.md) (July),
+[`docs/findings-2026-08.md`](docs/findings-2026-08.md) (August, incl.
+calendar & reviews),
+[`docs/findings-2026-09.md`](docs/findings-2026-09.md) (September).
 
 ## Sample query output
 
-A9 — marginal cost per bedroom (entire homes):
+A9 — marginal cost per bedroom (entire homes, June 2026):
 
 ```
 bedrooms  listings  avg_price  marginal_cost_of_extra_bedroom
