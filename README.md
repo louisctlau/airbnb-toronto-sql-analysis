@@ -19,18 +19,29 @@ clean, portfolio-ready SQL.
 ```
 airbnb-toronto-sql-analysis/
 ├── data/
-│   ├── listings.csv        # source data (downloaded, gitignored in real use)
-│   └── airbnb_toronto.db   # SQLite database created by the setup script
+│   ├── listings.csv               # June source data (downloaded, gitignored)
+│   ├── listings-2026-07.csv       # July source data (downloaded, gitignored)
+│   ├── listings-2026-08.csv       # August source data (downloaded, gitignored)
+│   ├── airbnb_toronto.db          # June SQLite database (build artifact)
+│   ├── airbnb_toronto_2026_07.db  # July SQLite database (build artifact)
+│   └── airbnb_toronto_2026_08.db  # August SQLite database (build artifact)
 ├── sql/
-│   ├── 01_setup.sql        # staging import → cleaned, typed `listings` table
+│   ├── 01_setup.sql        # staging import → cleaned, typed `listings` table (June)
+│   ├── 01_setup-2026-07.sql # same pipeline, July CSV (June script untouched)
+│   ├── 01_setup-2026-08.sql # same pipeline, August CSV (June script untouched)
 │   ├── 02_exploration.sql  # data-quality & exploratory checks (Q0–Q8)
 │   └── 03_analysis.sql     # 11 business questions (A1–A11)
 ├── scripts/
-│   └── make_charts.py      # generates docs/charts from the SQLite db (matplotlib)
+│   ├── make_charts.py      # generates docs/charts from the June db (matplotlib)
+│   └── make_charts_month.py # parameterized variant: --db --outdir --label
 ├── docs/
-│   ├── findings.md         # written findings report (all sections filled)
-│   ├── query_output.txt    # actual output of sql/03_analysis.sql
-│   └── charts/             # generated figures (see Key findings below)
+│   ├── findings.md             # June findings report (filled)
+│   ├── findings-2026-07.md     # July findings report (filled)
+│   ├── findings-2026-08.md     # August findings report (filled)
+│   ├── query_output.txt        # June: actual output of sql/03_analysis.sql
+│   ├── query_output-2026-07.txt # July: actual analysis output
+│   ├── query_output-2026-08.txt # August: actual analysis output
+│   └── charts/                 # June figures + charts/2026-07/ and charts/2026-08/
 └── README.md
 ```
 
@@ -85,7 +96,24 @@ gunzip -c data/listings.csv.gz > data/listings.csv
 | A10 | Top 10 neighbourhoods by estimated annual revenue | Aggregation, `HAVING` |
 | A11 | Best-value picks: 4.8★+ entire homes below neighbourhood median | CTE, windowed median, join |
 
-## Key findings
+## Monthly snapshots
+
+The same 20-query pipeline was re-run on two newer Inside Airbnb snapshots —
+schemas verified identical (90 columns, same header order), so the analysis
+queries ran unchanged:
+
+| Snapshot | Release | Scrape window | Listings | Findings report |
+|----------|---------|---------------|----------|-----------------|
+| June 2026 | 2026-06-15 | 2026-06-16 → 2026-06-28 | 22,198 | [findings.md](docs/findings.md) |
+| July 2026 | 2026-07-14 | 2026-07-14 → 2026-07-16 | 22,212 | [findings-2026-07.md](docs/findings-2026-07.md) |
+| August 2026 | 2026-08-15 | 2026-08-15 → 2026-08-27 | 22,257 | [findings-2026-08.md](docs/findings-2026-08.md) |
+
+Biggest month-over-month shifts: the June→July superhost price reversal
+(superhosts went from pricing *below* regular hosts to *above*, and stayed
+there in August); the entire-home median sliding $265 → $254; and the
+no-price-quote share rising from 17.7% to ~21%.
+
+## Key findings (June 2026 snapshot)
 
 - **Entire-home premium: 3.1×** — median $265/night for an entire home vs
   $85.50 for a private room. Waterfront Communities-The Island dominates
@@ -149,5 +177,6 @@ limitations (single snapshot, estimated occupancy/revenue fields are Inside
 Airbnb's models, not Airbnb's books) and ideas for extension
 (multi-snapshot trends, calendar.csv occupancy analysis, reviews.csv sentiment).
 
-> **Note:** `data/` (CSV + built SQLite db, ~158 MB) is gitignored. Clone,
-> then re-download the data and run `sql/01_setup.sql` to rebuild the database.
+> **Note:** `data/` (CSVs + built SQLite dbs, ~476 MB) is gitignored. Clone,
+> then re-download the data and run e.g. `sql/01_setup-2026-08.sql` to
+> rebuild a month's database.
