@@ -38,11 +38,12 @@ pipeline as the June and July reports. Three takeaways stand out:
 > revenue leader.
 
 > ### Calendar & reviews (new in this edition)
-> - **Real forward occupancy is 47.8%** — the average listing is unavailable
->   for 47.8% of the next 365 days (calendar truth) vs only ~20% implied by
->   Inside Airbnb's backward-looking `estimated_occupancy_l365d` model. The
->   estimate runs ~2.4× too low everywhere (e.g. Waterfront: 49.9% true vs
->   23.6% estimated; Niagara: 55.2% vs 19.0%).
+> - **Calendar unavailability is 47.8% — an upper bound on occupancy:** the
+>   average listing is unavailable for 47.8% of the next 365 days
+>   (unavailable days mix true bookings with host blocks) vs only ~20%
+>   implied by Inside Airbnb's backward-looking `estimated_occupancy_l365d`
+>   model. The estimate runs ~2.4× too low everywhere (e.g. Waterfront:
+>   49.9% unavailable vs 23.6% estimated; Niagara: 55.2% vs 19.0%).
 > - **56% of listings require 8–30-night minimum stays**, with 23% at 1
 >   night — consistent with Toronto's minimum-stay short-term rental rules
 >   pushing professional supply toward monthly bookings.
@@ -73,7 +74,7 @@ pipeline as the June and July reports. Three takeaways stand out:
   ratings, or impossible dates found.
 - **Analysis:** `sql/03_analysis.sql` run unchanged (11 questions; same
   CTE/window-function/self-join techniques as June/July), plus
-  `sql/04_calendar_analysis.sql` (true occupancy from calendar data) and
+  `sql/04_calendar_analysis.sql` (calendar unavailability from calendar data) and
   `sql/05_reviews_analysis.sql` (review trends) — see sections 6–7.
 - **Calendar & reviews (this edition):** the August db was extended with two
   new tables from the same release: `calendar` (8,123,819 rows — 22,257
@@ -232,14 +233,15 @@ non-availability — the best forward-looking proxy available. Also,
 forward, so the two measure different things; comparing them reveals the
 model's systematic bias rather than proving it "wrong".
 
-### 6.1 City-wide true occupancy (C1)
+### 6.1 City-wide calendar unavailability (C1)
 
 The average Toronto listing is unavailable for **47.8% of the next 365
-days** (22,257 listings × 365 days = 8.12M listing-days).
+days** (22,257 listings × 365 days = 8.12M listing-days) — an upper bound
+on true occupancy, since unavailable days mix bookings with host blocks.
 
-### 6.2 True vs estimated occupancy by neighbourhood (C2)
+### 6.2 Unavailability vs estimated occupancy by neighbourhood (C2)
 
-| Neighbourhood | Listings | True occ. | Est. occ. | Bias (true − est) |
+| Neighbourhood | Listings | Unavail. | Est. occ. | Gap (unavail − est) |
 |---|---|---|---|---|
 | Waterfront Communities-The Island | 3,786 | 49.9% | 23.6% | +26.3 pts |
 | Niagara | 910 | 55.2% | 19.0% | +36.2 pts |
@@ -252,13 +254,14 @@ days** (22,257 listings × 365 days = 8.12M listing-days).
 | Bay Street Corridor | 502 | 47.6% | 18.1% | +29.4 pts |
 | Willowdale East | 456 | 42.4% | 12.4% | +30.0 pts |
 
-The estimate is biased low **everywhere** — true occupancy runs roughly
-2.4× the model (Niagara: 55.2% true vs 19.0% estimated). Anyone valuing
-listings off `estimated_revenue_l365d`/`estimated_occupancy_l365d` alone
-is systematically under-counting. Trinity-Bellwoods (56.4%) and Niagara
-(55.2%) are the most-booked core neighbourhoods.
+The estimate is biased low **everywhere** — calendar unavailability runs
+roughly 2.4× the model (Niagara: 55.2% unavailable vs 19.0% estimated).
+Anyone valuing listings off `estimated_revenue_l365d` /
+`estimated_occupancy_l365d` alone is systematically under-counting forward
+demand signals. Trinity-Bellwoods (56.4%) and Niagara (55.2%) show the
+highest calendar unavailability among core neighbourhoods.
 
-![True vs estimated occupancy](charts/2026-08/occupancy_true_vs_estimate.png)
+![Calendar unavailability vs estimated occupancy](charts/2026-08/occupancy_true_vs_estimate.png)
 
 ### 6.3 Seasonal availability curve (C3)
 

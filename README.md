@@ -146,15 +146,17 @@ The August database goes beyond the listings snapshot: `calendar.csv.gz`
 (8,123,819 rows — every listing × 365 forward days) and `reviews.csv.gz`
 (709,449 rows, db keeps 2023+ = 447,129) were imported as typed `calendar`
 and `reviews` tables. New queries: `sql/04_calendar_analysis.sql`
-(true occupancy, estimate-bias check, seasonal availability curve, lead
+(calendar unavailability, estimate-bias check, seasonal availability curve, lead
 time, min-nights) and `sql/05_reviews_analysis.sql` (36-month volume
 trend, review length, velocity leaders, naive text signal). Results are in
 sections 6–7 of the
 [August findings report](docs/findings-2026-08.md).
 
-Headline: true forward occupancy averages **47.8%**, running ~2.4× above
-Inside Airbnb's backward estimate (~20%); review volume peaked at 24,685
-reviews (Jul 2026); 56% of listings require 8–30-night minimum stays.
+Headline: calendar unavailability averages **47.8%** — an upper bound on
+true occupancy, since unavailable days mix bookings with host blocks —
+running ~2.4× above Inside Airbnb's backward estimate (~20%); review
+volume peaked at 24,685 reviews (Jul 2026); 56% of listings require
+8–30-night minimum stays.
 
 ## Key findings (June → September 2026)
 
@@ -209,9 +211,10 @@ below is comparable month to month (charts show the latest, September 2026):
   6+ listing operators (avg $211): casual hosts price high, professionals
   compete on volume.
 
-- **True occupancy beats the estimates** — calendar data (August) puts real
-  forward occupancy at **47.8%**, ~2.4× Inside Airbnb's backward estimate
-  (~20%), low everywhere. Winter is the bookable season (62% of days
+- **Calendar unavailability is an occupancy upper bound** — calendar data
+  (August) shows **47.8%** unavailability (bookings + host blocks combined),
+  ~2.4× Inside Airbnb's backward estimate (~20%); the estimate runs low in
+  every neighbourhood. Winter is the bookable season (62% of days
   available in January); 56% of listings require 8–30-night minimum stays,
   consistent with Toronto's STR rules.
 

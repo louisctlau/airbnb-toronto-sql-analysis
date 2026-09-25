@@ -507,22 +507,24 @@ with tab_occ:
     st.header(f"Occupancy — {view}")
     if view != "August 2026":
         st.warning("📅 Calendar data exists for the **August 2026** snapshot only. "
-                   "Switch the snapshot selector to August 2026 to see true "
-                   "(calendar-derived) occupancy analysis.")
+                   "Switch the snapshot selector to August 2026 to see "
+                   "calendar-derived unavailability analysis.")
     else:
         true_occ = city_true_occupancy(view)
-        st.metric("City-wide true occupancy (calendar-derived, next 365 days)",
+        st.metric("City-wide calendar unavailability (upper bound on occupancy, next 365 days)",
                   f"{true_occ}%")
         st.caption("Inside Airbnb's `estimated_occupancy_l365d` field puts this at "
-                   "~20% — the calendar shows roughly **2.4×** more actual booked "
-                   "days. Estimates understate real activity.")
+                   "~20% — the calendar shows roughly **2.4×** more unavailable "
+                   "days. Unavailable days mix bookings with host blocks (seasonal "
+                   "closures, owner use), so this is an upper bound on true "
+                   "occupancy, not booked occupancy.")
         occ = true_occupancy_by_nb(view)
         fig = go.Figure()
-        fig.add_trace(go.Bar(name="True occupancy %", x=occ["nb"], y=occ["true_occ_pct"]))
+        fig.add_trace(go.Bar(name="Unavailable %", x=occ["nb"], y=occ["true_occ_pct"]))
         fig.add_trace(go.Bar(name="Inside Airbnb estimate %", x=occ["nb"],
                              y=occ["est_occ_pct"]))
         fig.update_layout(barmode="group", xaxis_tickangle=-30,
-                          title="True vs estimated occupancy — top 10 neighbourhoods",
+                          title="Calendar unavailability vs estimated occupancy — top 10 neighbourhoods",
                           yaxis_title="%")
         st.plotly_chart(fig, use_container_width=True)
         av = availability_curve(view)
