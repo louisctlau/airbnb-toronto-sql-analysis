@@ -409,7 +409,10 @@ with tab_over:
     order = ["June 2026", "July 2026", "August 2026", "September 2026"]
     df["month"] = pd.Categorical(df["month"], categories=order, ordered=True)
     df = df.sort_values("month")
-    fig = px.line(df.melt(id_vars="month", value_vars=["entire_med", "private_med"]),
+    melted = df.melt(id_vars="month", value_vars=["entire_med", "private_med"])
+    melted["variable"] = melted["variable"].map(
+        {"entire_med": "Entire home/apt", "private_med": "Private room"})
+    fig = px.line(melted,
                   x="month", y="value", color="variable", markers=True,
                   labels={"value": "$/night", "variable": "Room type"},
                   title="Median nightly price over time")
