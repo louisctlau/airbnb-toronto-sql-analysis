@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-23
+
+- **Trends view:** the tab bar no longer renders in "Trends (all months)"
+  view. Trends is a standalone page; previously the seven tabs were drawn
+  above it but left empty (the script stops after the trend charts), so
+  they looked broken. The tab bar now appears only in single-month views.
+
 ## 2026-10-22
 
 Dashboard content and functionality update (all figures recomputed live in

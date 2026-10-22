@@ -682,10 +682,6 @@ st.sidebar.markdown(
     "Calendar + reviews data exist for the **August 2026** snapshot only."
 )
 
-TABS = ["Overview", "Neighbourhoods", "Hosts", "Pricing",
-        "Occupancy", "Reviews", "Value finder"]
-tab_over, tab_nb, tab_hosts, tab_price, tab_occ, tab_rev, tab_val = st.tabs(TABS)
-
 if view == "Trends (all months)":
     st.title("📈 Month-over-month trends")
     df = all_kpis()
@@ -717,6 +713,13 @@ if view == "Trends (all months)":
              "instead); the trend charts are assembled from those KPI rows "
              "in pandas.")
     st.stop()
+
+# The tab bar is created only here, for single-month views: the Trends
+# branch above renders a standalone page and stops, so tabs created before
+# it would sit above that page as empty, clickable shells.
+TABS = ["Overview", "Neighbourhoods", "Hosts", "Pricing",
+        "Occupancy", "Reviews", "Value finder"]
+tab_over, tab_nb, tab_hosts, tab_price, tab_occ, tab_rev, tab_val = st.tabs(TABS)
 
 # ----------------------------------------------------------------------------
 # Overview tab
