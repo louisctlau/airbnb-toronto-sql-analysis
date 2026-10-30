@@ -1,11 +1,22 @@
 # Changelog
 
-## 2026-10-23
+## 2026-10-30
 
-- **Trends view:** the tab bar no longer renders in "Trends (all months)"
-  view. Trends is a standalone page; previously the seven tabs were drawn
-  above it but left empty (the script stops after the trend charts), so
-  they looked broken. The tab bar now appears only in single-month views.
+Trends view extension (the "Trends (all months)" page itself predates this
+change; these are new sections on it):
+
+- **Overall median price:** all-room-type median nightly price, June–September
+  2026 ($184.96 → $177.00 → $175.26 → $161.00), alongside the existing
+  entire-home and private-room median series.
+- **Room-type mix:** share of listings by room type over time — entire-home
+  share eased from 68.6% to 67.9% while private rooms rose from 31.1% to
+  31.7%; hotel and shared rooms stay under 1% combined.
+- **Neighbourhood median trajectories:** all-room-type median price over time
+  for the eight neighbourhoods with the most listings in the latest snapshot,
+  with a neighbourhood × month table of the same values.
+- **Future-proof month order:** the Trends page now derives its month list
+  from the snapshot set instead of a hardcoded list, so the next monthly
+  snapshot appears automatically once the refresh adds it.
 
 ## 2026-10-22
 
@@ -38,3 +49,32 @@ SQL from the committed bundle; September 2026 headline metrics unchanged):
   collapsed "View SQL" expander showing the exact query the app runs for
   it; pandas-aggregated visuals say so, and the one precomputed section
   (review word counts) states plainly that no query runs at page load.
+- **Trends view:** the tab bar no longer renders in "Trends (all months)"
+  view. Trends is a standalone page; previously the seven tabs were drawn
+  above it but left empty (the script stops after the trend charts), so
+  they looked broken. The tab bar now appears only in single-month views.
+
+## 2026-09-30
+
+- Keep-alive GitHub Actions workflow removed; keep-alive moved to
+  scheduled real-browser visits instead.
+
+## 2026-09-28
+
+- Overview legend now uses human-readable room-type labels.
+- Keep-alive workflow added (later removed, see 2026-09-30).
+
+## 2026-09-25
+
+- Occupancy framing corrected throughout: calendar unavailability is an
+  upper bound on occupancy, never "true" or "booked" occupancy.
+
+## 2026-09-23 — first deployment
+
+- End-to-end SQL analysis of Toronto Airbnb listings, published with the
+  Streamlit dashboard: monthly snapshots June–September 2026, seven tabs
+  (Overview, Neighbourhoods, Hosts, Pricing, Occupancy, Reviews, Value
+  finder), a month-over-month Trends page, and a self-contained data bundle
+  so the deployed app needs no external database.
+- Monthly refresh automation set up (20th of each month) to add each new
+  snapshot and rewrite the findings prose.

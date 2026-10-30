@@ -430,6 +430,19 @@ def overall_median(view: str) -> float:
     return float(df.iloc[0]["median_price"])
 
 
+def room_mix_sql(view: str) -> str:
+    src = src_for(view)
+    return f"""
+    SELECT room_type, COUNT(*) AS listings
+    FROM {src} GROUP BY room_type ORDER BY listings DESC
+    """
+
+
+@st.cache_data
+def room_mix(view: str) -> pd.DataFrame:
+    return query(MONTHS[view], room_mix_sql(view))
+
+
 def nb_median_pair_sql(view: str) -> str:
     src = src_for(view)
     return f"""
@@ -685,7 +698,7 @@ st.sidebar.markdown(
 if view == "Trends (all months)":
     st.title("📈 Month-over-month trends")
     df = all_kpis()
-    order = ["June 2026", "July 2026", "August 2026", "September 2026"]
+    order = list(MONTHS)
     df["month"] = pd.Categorical(df["month"], categories=order, ordered=True)
     df = df.sort_values("month")
 
@@ -707,6 +720,65 @@ if view == "Trends (all months)":
     st.dataframe(df.set_index("month"), use_container_width=True)
     st.caption("Each value is recomputed live from that month's SQLite database "
                "with the same window-function median semantics as sql/03_analysis.sql.")
+
+    st.subheader("Overall median price — all room types")
+    overall = pd.DataFrame(
+        {"month": order,
+         "median": [overall_median(m) for m in order]})
+    overall["month"] = pd.Categorical(overall["month"], categories=order,
+                                      ordered=True)
+    overall = overall.sort_values("month")
+    fig = px.line(overall, x="month", y="median", markers=True,
+                  labels={"median": "$/night"},
+                  title="Overall median nightly price (all room types)")
+    fig.update_layout(margin=dict(l=20, r=20, t=40, b=20), height=280)
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.subheader("Room-type mix — share of listings")
+    mix_rows = []
+    for m in order:
+        rm = room_mix(m)
+        total = rm["listings"].sum()
+        for _, r in rm.iterrows():
+            mix_rows.append({"month": m, "room_type": r["room_type"],
+                             "share": 100.0 * r["listings"] / total})
+    mix = pd.DataFrame(mix_rows)
+    mix["month"] = pd.Categorical(mix["month"], categories=order, ordered=True)
+    mix = mix.sort_values("month")
+    fig = px.line(mix, x="month", y="share", color="room_type", markers=True,
+                  labels={"share": "% of listings", "room_type": "Room type"},
+                  title="Listing mix by room type")
+    fig.update_layout(margin=dict(l=20, r=20, t=40, b=20), height=280)
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.subheader("Neighbourhood median trajectories")
+    st.write("All-room-type median nightly price for the eight neighbourhoods "
+             "with the most listings in the latest snapshot.")
+    top_nbs = neighbourhoods(LATEST)["nb"].head(8).tolist()
+    traj_rows = []
+    for m in order:
+        nb = neighbourhoods(m).set_index("nb")
+        for n in top_nbs:
+            if n in nb.index:
+                traj_rows.append({"month": m, "neighbourhood": n,
+                                  "median": float(nb.loc[n, "median_price"])})
+    traj = pd.DataFrame(traj_rows)
+    traj["month"] = pd.Categorical(traj["month"], categories=order,
+                                   ordered=True)
+    traj = traj.sort_values("month")
+    fig = px.line(traj, x="month", y="median", color="neighbourhood",
+                  markers=True, labels={"median": "$/night",
+                                        "neighbourhood": "Neighbourhood"},
+                  title="Neighbourhood median price over time")
+    fig.update_layout(margin=dict(l=20, r=20, t=40, b=20), height=320)
+    st.plotly_chart(fig, use_container_width=True)
+    piv = traj.pivot(index="neighbourhood", columns="month", values="median")
+    st.dataframe(piv, use_container_width=True)
+    view_sql(room_mix_sql(LATEST) + "\n-- and overall_median_sql + "
+             "neighbourhoods_sql, each run once per snapshot month.",
+             "Room mix counts listings by room_type per snapshot; the overall "
+             "median uses the same window-function median as sql/03_analysis.sql; "
+             "neighbourhood medians come from neighbourhoods_sql.")
     view_sql(kpi_sql("listings"),
              "Run once per snapshot month against that month's listings "
              "table (bundle mode reads the precomputed monthly_kpis table "
