@@ -9,6 +9,7 @@ every tab works identically off the small committed bundle, no full
 databases or secrets needed. See dashboard/README.md.
 """
 import sqlite3
+from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -694,6 +695,14 @@ st.sidebar.markdown(
     "detailed listings, Toronto. CC BY 4.0. Prices in CAD. "
     "Calendar + reviews data exist for the **August 2026** snapshot only."
 )
+
+# Next scheduled refresh: the 20th of each month (monthly cron).
+_today = date.today()
+if _today.day <= 20:
+    _ny, _nm = _today.year, _today.month
+else:
+    _ny, _nm = (_today.year + 1, 1) if _today.month == 12 else (_today.year, _today.month + 1)
+st.sidebar.caption(f"Next data update: 20 {date(_ny, _nm, 1).strftime('%B %Y')}")
 
 if view == "Trends (all months)":
     st.title("📈 Month-over-month trends")

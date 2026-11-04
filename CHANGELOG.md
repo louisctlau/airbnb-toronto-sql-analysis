@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-11-04
+
+- Sidebar now shows the next scheduled data update (the 20th of each month, rolling forward automatically).
+
 ## 2026-10-30
 
 Trends view extension (the "Trends (all months)" page itself predates this
