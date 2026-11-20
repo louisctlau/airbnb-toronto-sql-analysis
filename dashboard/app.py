@@ -704,6 +704,18 @@ else:
     _ny, _nm = (_today.year + 1, 1) if _today.month == 12 else (_today.year, _today.month + 1)
 st.sidebar.caption(f"Next data update: 20 {date(_ny, _nm, 1).strftime('%B %Y')}")
 
+if LATEST == "September 2026":
+    # 20 Nov 2026: the scheduled refresh found no new Inside Airbnb
+    # Toronto release (latest is still 16 Sep 2026, already processed) —
+    # October appears to have no Toronto release at all. Gated on the
+    # latest snapshot so the note disappears automatically when the next
+    # release is processed.
+    st.sidebar.caption("**Update 20 Nov 2026:** no new Toronto release — "
+                       "the latest Inside Airbnb release is still "
+                       "16 Sep 2026, already processed and in this dashboard "
+                       "(September snapshot). October appears to have no "
+                       "Toronto release at all, so nothing changed today.")
+
 if view == "Trends (all months)":
     st.title("📈 Month-over-month trends")
     df = all_kpis()

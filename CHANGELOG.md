@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-11-20
+
+- Sidebar note (20 Nov 2026): the scheduled monthly refresh found no new Inside Airbnb Toronto release — the latest is still 16 Sep 2026, already in the dashboard (September snapshot); October appears to have no Toronto release at all, so the dashboard is unchanged. The note is gated on the September snapshot and disappears automatically when the next release is processed.
+
 ## 2026-11-04
 
 - Sidebar now shows the next scheduled data update (the 20th of each month, rolling forward automatically).
