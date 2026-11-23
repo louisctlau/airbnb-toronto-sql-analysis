@@ -25,6 +25,14 @@ clean, portfolio-ready SQL.
 - **License:** [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
 - **Grain:** one row per Airbnb listing at scrape time (prices in CAD)
 
+- **Second source:** City of Toronto Open Data, "Short Term Rentals
+  Registration" — 8,576 active operator registrations, pulled 23 Nov 2026
+  (`data/str-registrations-2026-11-23.csv`, also committed as
+  `dashboard/data/str_registrations.csv`); compared against the September
+  snapshot in the dashboard's "Registered vs listed" page and in
+  `docs/str-registry-comparison-2026-11.md`. Inside Airbnb now publishes
+  quarterly, so the next Toronto release is likely mid-December.
+
 ## Project structure
 
 ```
@@ -34,6 +42,7 @@ airbnb-toronto-sql-analysis/
 │   ├── listings-2026-07.csv       # July source data (downloaded, gitignored)
 │   ├── listings-2026-08.csv       # August source data (downloaded, gitignored)
 │   ├── listings-2026-09.csv       # September source data (downloaded, gitignored)
+│   ├── str-registrations-2026-11-23.csv  # City STR registry (downloaded 23 Nov 2026)
 │   ├── calendar-2026-08.csv     # August calendar data (downloaded, gitignored)
 │   ├── reviews-2026-08.csv      # August reviews data (downloaded, gitignored; cut to 2023+ in db)
 │   ├── airbnb_toronto.db          # June SQLite database (build artifact)
@@ -57,6 +66,7 @@ airbnb-toronto-sql-analysis/
 │   ├── findings-2026-07.md     # July findings report (filled)
 │   ├── findings-2026-08.md     # August findings report (filled)
 │   ├── findings-2026-09.md     # September findings report (filled)
+│   ├── str-registry-comparison-2026-11.md  # registered-vs-listed comparison (City registry vs Sep snapshot)
 │   ├── query_output.txt        # June: actual output of sql/03_analysis.sql
 │   ├── query_output-2026-07.txt # July: actual analysis output
 │   ├── query_output-2026-08.txt # August: actual analysis output

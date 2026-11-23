@@ -679,13 +679,60 @@ def comparator(view: str, nbs: tuple) -> tuple:
     return out, meds
 
 # ----------------------------------------------------------------------------
+# Added Nov 2026: City of Toronto STR registry vs Inside Airbnb listings.
+# The registry is a CSV, not a snapshot table: read it with pandas and
+# aggregate at page load. To refresh, re-pull from Toronto Open Data,
+# overwrite dashboard/data/str_registrations.csv and update REGISTRY_DATE.
+# ----------------------------------------------------------------------------
+REGISTRY_CSV = BASE / "data" / "str_registrations.csv"
+REGISTRY_DATE = "23 November 2026"  # dataset last refreshed that day
+REGISTRY_SOURCE = ("https://open.toronto.ca/dataset/"
+                   "short-term-rentals-registration/")
+AIRDNA_LISTINGS = 15118  # AirDNA Toronto, Oct 2026 (page updated 17 Nov 2026)
+AIRDNA_OCCUPANCY = 72    # % actually booked, trailing 12 months
+AIRDNA_ADR = 122         # $/night, trailing 12 months
+AIRDNA_REVENUE = 28100   # $/listing/year, trailing 12 months
+
+
+@st.cache_data
+def load_registry() -> pd.DataFrame:
+    return pd.read_csv(REGISTRY_CSV)
+
+
+@st.cache_data
+def registry_wards() -> pd.DataFrame:
+    reg = load_registry()
+    w = (reg.groupby("ward_name").size().rename("registrations")
+         .reset_index().sort_values("registrations", ascending=False))
+    w["share_pct"] = (100.0 * w["registrations"] / len(reg)).round(1)
+    return w
+
+
+@st.cache_data
+def registry_property_mix() -> pd.DataFrame:
+    reg = load_registry()
+    m = (reg.groupby("property_type").size().rename("registrations")
+         .reset_index().sort_values("registrations", ascending=False))
+    m["share_pct"] = (100.0 * m["registrations"] / len(reg)).round(1)
+    return m
+
+
+@st.cache_data
+def registry_top_addresses(n: int = 10) -> pd.DataFrame:
+    reg = load_registry()
+    a = (reg.groupby("address").size().rename("registrations")
+         .reset_index().sort_values("registrations", ascending=False))
+    return a.head(n)
+
+# ----------------------------------------------------------------------------
 # Sidebar
 # ----------------------------------------------------------------------------
 st.sidebar.title("🏙️ Toronto Airbnb")
 st.sidebar.caption("SQL portfolio dashboard · Inside Airbnb data")
 view = st.sidebar.selectbox(
     "Snapshot",
-    ["June 2026", "July 2026", "August 2026", "September 2026", "Trends (all months)"],
+    ["June 2026", "July 2026", "August 2026", "September 2026", "Trends (all months)",
+     "Registered vs listed"],
     index=3,
 )
 
@@ -705,16 +752,17 @@ else:
 st.sidebar.caption(f"Next data update: 20 {date(_ny, _nm, 1).strftime('%B %Y')}")
 
 if LATEST == "September 2026":
-    # 20 Nov 2026: the scheduled refresh found no new Inside Airbnb
-    # Toronto release (latest is still 16 Sep 2026, already processed) —
-    # October appears to have no Toronto release at all. Gated on the
-    # latest snapshot so the note disappears automatically when the next
-    # release is processed.
-    st.sidebar.caption("**Update 20 Nov 2026:** no new Toronto release — "
-                       "the latest Inside Airbnb release is still "
-                       "16 Sep 2026, already processed and in this dashboard "
-                       "(September snapshot). October appears to have no "
-                       "Toronto release at all, so nothing changed today.")
+    # 23 Nov 2026: Inside Airbnb now publishes quarterly ("generally
+    # quarterly data for the last 12 months"), so no October or November
+    # Toronto release was ever coming — the next drop is likely
+    # mid-December. Gated on the latest snapshot so the note disappears
+    # automatically when the next release is processed.
+    st.sidebar.caption("**Update 23 Nov 2026:** no new Toronto release — "
+                       "Inside Airbnb now publishes **quarterly**, so the "
+                       "latest release is still 16 Sep 2026, already "
+                       "processed and in this dashboard (September "
+                       "snapshot). The next Toronto drop is likely "
+                       "mid-December.")
 
 if view == "Trends (all months)":
     st.title("📈 Month-over-month trends")
@@ -805,6 +853,141 @@ if view == "Trends (all months)":
              "table (bundle mode reads the precomputed monthly_kpis table "
              "instead); the trend charts are assembled from those KPI rows "
              "in pandas.")
+    st.stop()
+
+if view == "Registered vs listed":
+    st.title("🏛️ Registered vs listed")
+    st.caption("How many of Toronto's short-term rentals are actually "
+               "registered with the city? The City of Toronto requires every "
+               "short-term rental operator to register (Municipal Code "
+               "Chapter 547). This page compares that official registry "
+               "against the Airbnb listings in this dashboard.")
+    reg = load_registry()
+    n_reg = len(reg)
+    n_list = kpis(LATEST)["listings"]
+    coverage = 100.0 * n_reg / n_list
+    airdna_cov = 100.0 * n_reg / AIRDNA_LISTINGS
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Active registrations", f"{n_reg:,}",
+              help=f"City of Toronto STR registry, {REGISTRY_DATE}.")
+    c2.metric(f"Airbnb listings ({LATEST})", f"{n_list:,}")
+    c3.metric("Registered share of listings", f"≤{coverage:.1f}%",
+              help="Upper bound, not a compliance rate — see below.")
+    c4.metric("Registered share of AirDNA active listings",
+              f"{airdna_cov:.1f}%",
+              help=f"AirDNA counts {AIRDNA_LISTINGS:,} active Toronto "
+                   "listings (Oct 2026), de-duplicated across Airbnb, Vrbo "
+                   "and Booking.com.")
+
+    st.subheader("Three sources, three counts")
+    st.dataframe(pd.DataFrame([
+        {"Source": "Inside Airbnb (Sep 2026 snapshot)",
+         "Universe": "Airbnb listings scraped 17–18 Sep 2026",
+         "Count": f"{n_list:,}"},
+        {"Source": f"City of Toronto STR registry ({REGISTRY_DATE})",
+         "Universe": "Active registered operators, all platforms",
+         "Count": f"{n_reg:,}"},
+        {"Source": "AirDNA (Oct 2026, page updated 17 Nov 2026)",
+         "Universe": "Active listings, Airbnb + Vrbo + Booking.com",
+         "Count": f"{AIRDNA_LISTINGS:,}"},
+    ]), use_container_width=True, hide_index=True)
+    st.write(f"**At most {coverage:.1f}% of September's Airbnb listings "
+             f"could be registered** ({n_reg:,} / {n_list:,}). That is an "
+             "upper bound: the registry covers every platform (Airbnb, Vrbo, "
+             "B&Bs), so the share of *Airbnb* listings that are registered "
+             "is lower. The two counts are also two months apart, and some "
+             "September listings may since have left the platform.")
+    st.write(f"AirDNA's narrower active-listing count implies a "
+             f"{airdna_cov:.1f}% registered share — "
+             "and its occupancy figure is actual booked occupancy "
+             f"({AIRDNA_OCCUPANCY}%, trailing 12 months, ${AIRDNA_ADR} ADR, "
+             f"${AIRDNA_REVENUE:,} annual revenue per listing), a useful "
+             "cross-check against this dashboard's modelled "
+             "calendar-unavailability figures, which are an upper bound.")
+
+    st.subheader("Where the registrations are")
+    wards = registry_wards()
+    top_wards = wards.head(10)
+    fig = px.bar(top_wards.sort_values("registrations"),
+                 x="registrations", y="ward_name", orientation="h",
+                 labels={"ward_name": "", "registrations": "Registrations"},
+                 title="Top 10 wards by active registrations")
+    st.plotly_chart(fig, use_container_width=True)
+    st.write(f"Spadina-Fort York alone holds "
+             f"{int(wards.iloc[0]['registrations']):,} registrations "
+             f"({wards.iloc[0]['share_pct']:.1f}%); the top 3 wards hold "
+             f"{int(wards.head(3)['registrations'].sum()):,} "
+             f"({wards.head(3)['share_pct'].sum():.1f}%). The same downtown "
+             "core tops Inside Airbnb too — Waterfront Communities-The "
+             "Island is its largest neighbourhood (2,946 listings, 17.6% of "
+             "priced supply) and sits inside Spadina-Fort York.")
+    st.dataframe(wards.head(10).rename(columns={
+        "ward_name": "Ward", "registrations": "Registrations",
+        "share_pct": "Share %"}),
+        use_container_width=True, hide_index=True)
+
+    st.subheader("The tower effect")
+    top_addr = registry_top_addresses(10)
+    st.dataframe(top_addr.rename(columns={
+        "address": "Address", "registrations": "Registrations"}),
+        use_container_width=True, hide_index=True)
+    st.write(f"The top 8 addresses hold "
+             f"{int(top_addr.head(8)['registrations'].sum()):,} "
+             f"registrations "
+             f"({100.0 * top_addr.head(8)['registrations'].sum() / n_reg:.1f}% "
+             "of the registry). Every one is a downtown condominium tower — "
+             "registration concentrates building by building, not evenly "
+             "across the city.")
+
+    st.subheader("Property mix")
+    mix = registry_property_mix()
+    fig = px.bar(mix, x="property_type", y="registrations", color="property_type",
+                 labels={"property_type": "", "registrations": "Registrations"},
+                 title="Registrations by property type")
+    st.plotly_chart(fig, use_container_width=True)
+    multi_unit = mix[mix["property_type"].isin(["Condominium", "Apartment"])]["share_pct"].sum()
+    st.write("Condominiums plus apartments are "
+             f"{multi_unit:.1f}% "
+             "of the registry — the registered market is roughly half "
+             "multi-unit buildings, half houses. (Inside Airbnb's cut is "
+             "different — room type, not property type — so the mixes are "
+             "not directly comparable: 67.9% of September listings were "
+             "entire homes/apts and 31.7% private rooms.)")
+    st.dataframe(mix.rename(columns={
+        "property_type": "Property type", "registrations": "Registrations",
+        "share_pct": "Share %"}),
+        use_container_width=True, hide_index=True)
+
+    st.subheader("Reading the 38.9% honestly")
+    st.markdown(
+        "- It is an **upper bound**. The registry includes Vrbo-only "
+        "operators and B&Bs, and some Airbnb listings in the September "
+        "snapshot may since have left the platform. The true share of "
+        "Airbnb listings that are registered is below "
+        f"{coverage:.1f}%.\n"
+        "- The two counts are two months apart (September snapshot vs "
+        f"{REGISTRY_DATE} registry). Listings turn over; the gap is not a "
+        "same-day audit.\n"
+        "- It is not a city compliance rate either: unregistered listings "
+        "are not the same as illegal listings (some are exempt, some are "
+        "inactive).\n"
+        "- What it does establish: **registered operators are a minority "
+        "of the listing stock under any definition**.")
+    st.caption(f"Sources: [City of Toronto Open Data — Short Term Rentals "
+               f"Registration]({REGISTRY_SOURCE}) (daily refresh; this pull "
+               f"{REGISTRY_DATE}, CC BY-style open licence), [Inside Airbnb]"
+               "(https://insideairbnb.com/get-the-data/) September 2026, "
+               "[AirDNA Toronto]"
+               "(https://www.airdna.co/vacation-rental-data/app/ca/ontario). "
+               "Full write-up: docs/str-registry-comparison-2026-11.md.")
+    with st.expander("How this page is built"):
+        st.caption("No SQL runs at page load for this page: the registry is "
+                   "a committed CSV (dashboard/data/str_registrations.csv) "
+                   "and the ward, property-mix and address tables are "
+                   "pandas group-bys over it, cached with @st.cache_data. "
+                   "The Airbnb listing count is the live KPI query for the "
+                   "latest snapshot.")
     st.stop()
 
 # The tab bar is created only here, for single-month views: the Trends

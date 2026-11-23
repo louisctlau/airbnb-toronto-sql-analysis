@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-11-23
+
+- New "Registered vs listed" dashboard page (sidebar): the City of Toronto
+  STR registry (8,576 active registrations, pulled 23 Nov 2026) against the
+  September Airbnb snapshot (22,050 listings) — at most 38.9% of listings
+  could be registered (an upper bound, not a compliance rate). Ward chart,
+  property mix, top addresses, and an AirDNA cross-check (15,118 active
+  listings, 72% booked occupancy). Registry CSV committed at
+  `dashboard/data/str_registrations.csv`; full write-up in
+  `docs/str-registry-comparison-2026-11.md`.
+- Sidebar note corrected: Inside Airbnb now publishes **quarterly**
+  ("generally quarterly data for the last 12 months"), so the next Toronto
+  release is likely mid-December — no October or November release was ever
+  coming.
+
 ## 2026-11-20
 
 - Sidebar note (20 Nov 2026): the scheduled monthly refresh found no new Inside Airbnb Toronto release — the latest is still 16 Sep 2026, already in the dashboard (September snapshot); October appears to have no Toronto release at all, so the dashboard is unchanged. The note is gated on the September snapshot and disappears automatically when the next release is processed.
